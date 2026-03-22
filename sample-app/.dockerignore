@@ -1,0 +1,32 @@
+# Build outputs
+build/
+.gradle/
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Git
+.git/
+.gitignore
+
+# GitHub
+.github/
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Benchmark outputs
+benchmark_results_*.csv

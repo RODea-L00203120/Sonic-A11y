@@ -1,0 +1,28 @@
+{
+  "name": "DevOps Pipeline - Java 21 Temurin",
+  "image": "eclipse-temurin:21-jdk",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
+    "ghcr.io/devcontainers/features/terraform:1": {}
+  },
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-gradle",
+        "ms-azuretools.vscode-docker",
+        "github.vscode-github-actions",
+        "hashicorp.terraform"
+      ]
+    }
+  },
+  
+  "postCreateCommand": "chmod +x gradlew && ./gradlew build",
+  
+  "remoteUser": "root"
+}
