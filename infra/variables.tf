@@ -16,9 +16,9 @@ variable "location" {
 }
 
 variable "vm_size" {
-  description = "Azure VM size - B1s is free tier eligible (750 hrs/month for 12 months)"
+  description = "Azure VM size — B2s provides 2 vCPUs / 4 GiB RAM (~$0.04/hr from student credit)"
   type        = string
-  default     = "Standard_B1s"
+  default     = "Standard_B2s"
 }
 
 variable "admin_username" {

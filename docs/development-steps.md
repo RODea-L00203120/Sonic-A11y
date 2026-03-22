@@ -9,3 +9,11 @@
 - The monitoring stack (`docker-compose.yml`, `prometheus.yml`) was moved out of `sample-app/` to a root-level `monitoring/` directory so it can be reused with any Prometheus-compatible application.
 - The CI workflow was moved to `.github/workflows/` and updated with `working-directory` and path filters for the monorepo layout.
 - Redundant files from the cloned repo were cleaned up: nested `.gitignore`, old MIT license, AWS deploy workflow, leftover demo comments in source, spelling errors in the README, and the auto-generated Gradle project name.
+
+## Session 2 — Azure Setup and Dev Environment
+
+- Azure for Students subscription was activated and available regions/VM sizes were checked via the Azure CLI.
+- UK South was confirmed as an available region. The VM size was updated from Standard_B1s (1 GiB RAM, free tier) to Standard_B2s (2 vCPUs, 4 GiB RAM, ~$0.04/hr) as the free tier VMs lacked sufficient memory for running Spring Boot, Prometheus, and Grafana together.
+- An SSH key pair was generated (`ed25519`) for Azure VM access.
+- OpenTofu was added as a dev container feature so infrastructure can be managed from within the development environment.
+- The dev container was rebuilt with the updated configuration.
