@@ -17,3 +17,6 @@
 - An SSH key pair was generated (`ed25519`) for Azure VM access.
 - OpenTofu was added as a dev container feature so infrastructure can be managed from within the development environment.
 - The dev container was rebuilt with the updated configuration.
+- The azurerm provider's `resource_provider_registrations` was set to `"none"` (recommended default from v5.0+), with explicit `azurerm_resource_provider_registration` resources for Compute and Network — keeping provider registration managed as IaC rather than relying on auto-registration.
+- `tofu plan` completed successfully with 10 resources planned. `tofu apply` deferred until deployment is needed.
+- The `feature/sample-app` branch was merged to main to begin work on the Grafana plugin.
