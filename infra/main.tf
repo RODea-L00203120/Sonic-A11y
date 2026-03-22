@@ -11,7 +11,16 @@ terraform {
 
 provider "azurerm" {
   features {}
-  subscription_id = var.subscription_id
+  subscription_id                = var.subscription_id
+  resource_provider_registrations = "none"
+}
+
+resource "azurerm_resource_provider_registration" "compute" {
+  name = "Microsoft.Compute"
+}
+
+resource "azurerm_resource_provider_registration" "network" {
+  name = "Microsoft.Network"
 }
 
 resource "azurerm_resource_group" "a11y" {
