@@ -54,8 +54,8 @@ public class BenchmarkRunner {
         double totalTimeSeconds = (endTime - startTime) / 1_000_000_000.0;
         printer.printTotalTime(totalTimeSeconds);
         
-        // Export results to CSV
-        csvExporter.exportToFile();
+        // CSV export disabled for now
+        // csvExporter.exportToFile();
     }
 
     private void runSortingBenchmark(String algorithmName, Consumer<int[]> sortingAlgorithm) {
@@ -83,8 +83,8 @@ public class BenchmarkRunner {
             printer.printAlgorithmResults(algorithmName, wallTimes, new double[sizes.length]);
         }
         
-        // Synchronize CSV additions
-        synchronized (csvExporter) {
-            csvExporter.addResult(algorithmName, wallTimes);
-        }
+        // CSV export disabled for now
+        // synchronized (csvExporter) {
+        //     csvExporter.addResult(algorithmName, wallTimes);
+        // }
     }}

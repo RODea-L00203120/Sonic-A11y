@@ -14,3 +14,9 @@ services:
       retries: 3
       start_period: 40s
     restart: unless-stopped
+    networks:
+      - a11y-net
+
+networks:
+  a11y-net:
+    external: true

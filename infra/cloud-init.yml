@@ -10,9 +10,12 @@ runcmd:
   - systemctl start docker
   - usermod -aG docker azureuser
 
+  # Create shared network for cross-compose communication
+  - docker network create a11y-net
+
   # Pull and run sample app
   - docker pull ${docker_image}
-  - docker run -d --name algobench --restart unless-stopped -p 8080:8080 ${docker_image}
+  - docker run -d --name algobench --restart unless-stopped --network a11y-net -p 8080:8080 ${docker_image}
 
   # Set up monitoring stack
   - mkdir -p /opt/monitoring
@@ -25,7 +28,7 @@ runcmd:
       - job_name: 'algobench'
         metrics_path: '/actuator/prometheus'
         static_configs:
-          - targets: ['172.17.0.1:8080']
+          - targets: ['algobench:8080']
     PROMEOF
   - |
     cat > /opt/monitoring/docker-compose.yml <<'COMPEOF'
@@ -40,6 +43,8 @@ runcmd:
           - prometheus-data:/prometheus
         command:
           - '--config.file=/etc/prometheus/prometheus.yml'
+        networks:
+          - a11y-net
         restart: unless-stopped
       grafana:
         image: grafana/grafana:latest
@@ -50,7 +55,12 @@ runcmd:
           - GF_SECURITY_ADMIN_PASSWORD=admin
         volumes:
           - grafana-data:/var/lib/grafana
+        networks:
+          - a11y-net
         restart: unless-stopped
+    networks:
+      a11y-net:
+        external: true
     volumes:
       prometheus-data:
       grafana-data:

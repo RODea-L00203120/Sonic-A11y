@@ -9,6 +9,8 @@ services:
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - a11y-net
     restart: unless-stopped
 
   grafana:
@@ -20,7 +22,13 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - grafana-data:/var/lib/grafana
+    networks:
+      - a11y-net
     restart: unless-stopped
+
+networks:
+  a11y-net:
+    external: true
 
 volumes:
   prometheus-data:
