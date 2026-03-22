@@ -1,0 +1,24 @@
+# Java / Gradle
+.gradle/
+build/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+*.tfvars
+
+# Node (for Grafana plugin development)
+node_modules/
+dist/

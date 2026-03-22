@@ -1,15 +1,14 @@
 {
-  "name": "DevOps Pipeline - Java 21 Temurin",
+  "name": "A11y - Audible Observability Tool",
   "image": "eclipse-temurin:21-jdk",
-  
+
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/git:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/aws-cli:1": {},
-    "ghcr.io/devcontainers/features/terraform:1": {}
+    "ghcr.io/devcontainers/features/azure-cli:1": {}
   },
-  
+
   "customizations": {
     "vscode": {
       "extensions": [
@@ -17,12 +16,12 @@
         "vscjava.vscode-gradle",
         "ms-azuretools.vscode-docker",
         "github.vscode-github-actions",
-        "hashicorp.terraform"
+        "ms-azuretools.vscode-azureterraform"
       ]
     }
   },
-  
-  "postCreateCommand": "chmod +x gradlew && ./gradlew build",
-  
+
+  "postCreateCommand": "cd sample-app && chmod +x gradlew && ./gradlew build",
+
   "remoteUser": "root"
 }
