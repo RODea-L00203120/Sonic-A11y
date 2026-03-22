@@ -1,10 +1,14 @@
-name: Java CI/CD with Docker
+name: Sample App CI
 
 on:
   push:
     branches: [ main, 'feature/**' ]
+    paths:
+      - 'sample-app/**'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'sample-app/**'
 
 env:
   REGISTRY: ghcr.io
@@ -13,43 +17,46 @@ env:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sample-app
     permissions:
       contents: read
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         java-version: '21'
         distribution: 'temurin'
-    
+
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
-    
+
     - name: Make gradlew executable
       run: chmod +x gradlew
-    
+
     - name: Build with Gradle
       run: ./gradlew build
-      
+
     - name: Run tests
       run: ./gradlew test
-      
+
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: test-reports
-        path: build/reports/tests/test/
-        
+        path: sample-app/build/reports/tests/test/
+
     - name: Upload JAR artifact
       uses: actions/upload-artifact@v4
       with:
         name: application-jar
-        path: build/libs/*.jar
+        path: sample-app/build/libs/*.jar
 
   security-scan:
     name: Security Scan
@@ -68,7 +75,7 @@ jobs:
       run: echo "name=$(echo ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
     - name: Build Docker image for scanning
-      run: docker build -t ${{ steps.image.outputs.name }} .
+      run: docker build -t ${{ steps.image.outputs.name }} sample-app/
 
     - name: Run Trivy vulnerability scanner (SARIF)
       id: trivy-sarif
@@ -145,7 +152,7 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: sample-app/
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
