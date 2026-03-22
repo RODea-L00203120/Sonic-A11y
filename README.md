@@ -20,10 +20,18 @@ This repository was created in order to develop, maintain and host documentation
 
 - Include links here
 
-## Demonstration 
+## Demonstration
 
 - Images/Link to recording
 - Link to Paper
+
+### Sample Application for Demonstration Purposes
+
+The [AlgoBench](sample-app/) application is included as a sample workload to generate real metrics for the A11y sonification plugin. It is a Java/Spring Boot algorithm benchmarking tool that compares sorting algorithms across different input sizes and data distributions.
+
+**Tech Stack:** Java 21, Spring Boot 3, Gradle, Docker, Prometheus, Grafana
+
+**Role in A11y:** AlgoBench exposes JVM and application metrics via Spring Boot Actuator and a Prometheus endpoint. These metrics (CPU load, memory usage, request rates) serve as the live data source that the A11y plugin will sonify. The application will be deployed on Azure to provide a persistent, accessible demonstration environment.
 
 ## To-Do
 
