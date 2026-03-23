@@ -34,6 +34,39 @@ tofu apply
 tofu destroy
 ```
 
+## Node Version Management (nvm)
+
+```bash
+# Install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+
+# Install Node 22 (required for Grafana plugin tooling)
+nvm install 22
+
+# Switch to Node 22 (reads .nvmrc if present)
+nvm use
+
+# Check active version
+node --version
+```
+
+## Grafana Plugin Development
+
+```bash
+cd a11y-a11ysonification-panel
+
+# Install dependencies
+npm install
+
+# Build (and watch) plugin frontend
+npm run dev
+
+# Start Grafana dev server (from plugin directory)
+docker compose up
+
+# Open Grafana at http://localhost:3000
+```
+
 ## Docker (Local Development)
 
 ```bash

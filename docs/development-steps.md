@@ -20,3 +20,9 @@
 - The azurerm provider's `resource_provider_registrations` was set to `"none"` (recommended default from v5.0+), with explicit `azurerm_resource_provider_registration` resources for Compute and Network — keeping provider registration managed as IaC rather than relying on auto-registration.
 - `tofu plan` completed successfully with 10 resources planned. `tofu apply` deferred until deployment is needed.
 - The `feature/sample-app` branch was merged to main to begin work on the Grafana plugin.
+
+## Session 3 — Grafana Plugin Scaffolding
+
+- Node 22 was installed via nvm to meet the requirements of `@grafana/create-plugin` (v7.0.8). An `.nvmrc` file was added to the repo root so contributors can run `nvm use` to switch to the correct version.
+- The dev container was updated to include the `ghcr.io/devcontainers/features/node:1` feature (Node 22). The discontinued `devcontainers-contrib` OpenTofu feature reference was replaced with `devcontainers-extra`.
+- The Grafana panel plugin was scaffolded using `npx @grafana/create-plugin@latest` as a **panel** plugin (`a11y-a11ysonification-panel`). This generates the default template with React/TypeScript source, provisioning, E2E tests (Playwright), Docker dev environment, and GitHub Actions for CI/releases.

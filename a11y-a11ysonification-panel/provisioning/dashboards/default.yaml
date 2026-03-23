@@ -1,0 +1,7 @@
+apiVersion: 1
+
+providers:
+  - name: 'A11y Sonification'
+    type: file
+    options:
+      path: /etc/grafana/provisioning/dashboards
