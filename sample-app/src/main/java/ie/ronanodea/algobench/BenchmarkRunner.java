@@ -10,14 +10,14 @@ public class BenchmarkRunner {
     private final Benchmarker benchmarker;
     private final BenchmarkConfig config;
     private final BenchmarkResultsPrinter printer;
-    private final CSVExporter csvExporter;
+    // private final CSVExporter csvExporter;
     private final Map<String, Double> completionTimes = new ConcurrentHashMap<>();
 
     public BenchmarkRunner(BenchmarkConfig config) {
         this.benchmarker = new Benchmarker();
         this.config = config;
         this.printer = new BenchmarkResultsPrinter();
-        this.csvExporter = new CSVExporter(config.getArraySizes());
+        // this.csvExporter = new CSVExporter(config.getArraySizes());
     }
 
     public void runAllBenchmarks() {
