@@ -1,10 +1,11 @@
 import { PanelData } from '@grafana/data';
 
 /**
- * Extracts the latest numeric value from a Grafana panel data frame
- * and normalizes it to a 0–1 range using the min/max of the series.
+ * Extracts the latest numeric value from a Grafana panel data frame,
+ * or null if no data is available. No scaling is applied — that is
+ * the responsibility of per-metric scalers (e.g. CpuScaler).
  */
-export function scaleMetric(data: PanelData): number | null {
+export function extractLatestValue(data: PanelData): number | null {
   if (data.series.length === 0) {
     return null;
   }
@@ -20,13 +21,5 @@ export function scaleMetric(data: PanelData): number | null {
     return null;
   }
 
-  const latest = values[values.length - 1];
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-
-  if (min === max) {
-    return 0.5;
-  }
-
-  return (latest - min) / (max - min);
+  return values[values.length - 1];
 }

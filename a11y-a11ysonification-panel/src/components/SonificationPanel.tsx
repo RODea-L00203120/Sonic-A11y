@@ -4,7 +4,8 @@ import { SonificationOptions } from 'types';
 import { css, cx } from '@emotion/css';
 import { useStyles2 } from '@grafana/ui';
 import { MasterChain } from '../audio/MasterChain';
-import { scaleMetric } from '../audio/DataScaler';
+import { extractLatestValue } from '../audio/DataScaler';
+import { scaleCpu } from '../audio/scalers/CpuScaler';
 import { SoundPreset } from '../audio/SoundPreset';
 import { SynthA11y } from '../audio/presets/SynthA11y';
 
@@ -65,13 +66,13 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
   const masterRef = useRef<MasterChain | null>(null);
   const presetRef = useRef<SoundPreset | null>(null);
 
-  const metricValue = scaleMetric(data);
-  const cpu = metricValue ?? 0;
+  const rawValue = extractLatestValue(data);
+  const cpu = rawValue !== null ? scaleCpu(rawValue) : 0;
 
-  // Update preset when metric data changes
+  // Update preset whenever Grafana pushes new data
   useEffect(() => {
     presetRef.current?.update(cpu);
-  }, [cpu]);
+  }, [data, cpu]);
 
   const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const vol = parseFloat(e.target.value);
@@ -136,8 +137,8 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
         </div>
       </div>
       <div className={styles.status}>
-        {metricValue !== null
-          ? `Metric: ${(metricValue * 100).toFixed(1)}% | Preset: Synth A11y`
+        {rawValue !== null
+          ? `CPU: ${rawValue.toFixed(1)}% | Preset: Synth A11y`
           : 'No data'}
       </div>
     </div>

@@ -1,15 +1,15 @@
 import { SoundPreset } from '../SoundPreset';
+import { Glide } from '../effects/Glide';
+import { Distortion } from '../effects/Distortion';
+import { SynthA11yEQ } from '../effects/SynthA11yEQ';
 
 // --- Tuning constants ---
 
-const GLIDE_TIME = 0.3;
+const GLIDE_DURATION = 3.0;
 
 // LPF cutoff range
 const LPF_MIN_FREQ = 300;
 const LPF_MAX_FREQ = 15000;
-
-// HPF to remove low-end mud
-const HPF_FREQ = 180;
 
 // C major triad spread across two octaves (C3 E3 G3 C4 E4 G4)
 const CHORD_FREQS = [130.81, 164.81, 196.0, 261.63, 329.63, 392.0];
@@ -20,20 +20,9 @@ const LFO_MIN_RATE = 0.3;
 const LFO_MAX_RATE = 6.0;
 const LFO_DEPTH = 0.1;
 
-// Waveshaper distortion
-const DISTORTION_SAMPLES = 256;
 const MAX_DISTORTION = 8.0;
 
 // --- Helpers ---
-
-function makeDistortionCurve(drive: number): Float32Array<ArrayBuffer> {
-  const curve = new Float32Array(DISTORTION_SAMPLES);
-  for (let i = 0; i < DISTORTION_SAMPLES; i++) {
-    const x = (i * 2) / DISTORTION_SAMPLES - 1;
-    curve[i] = drive === 0 ? x : Math.tanh(drive * x);
-  }
-  return curve;
-}
 
 function metricToFilterCutoff(value: number): number {
   return LPF_MIN_FREQ * Math.pow(LPF_MAX_FREQ / LPF_MIN_FREQ, value);
@@ -52,17 +41,15 @@ export class SynthA11y implements SoundPreset {
   private oscillators: OscillatorNode[] = [];
   private lfo: OscillatorNode | null = null;
   private lpf: BiquadFilterNode | null = null;
-  private waveshaper: WaveShaperNode | null = null;
+  private distortion: Distortion | null = null;
+  private readonly glide = new Glide(GLIDE_DURATION);
 
   start(ctx: AudioContext, destination: AudioNode): void {
     this.ctx = ctx;
 
     // --- Filters ---
 
-    const hpf = ctx.createBiquadFilter();
-    hpf.type = 'highpass';
-    hpf.frequency.value = HPF_FREQ;
-    hpf.Q.value = 0.5;
+    const eq = new SynthA11yEQ(ctx);
 
     const lpf = ctx.createBiquadFilter();
     lpf.type = 'lowpass';
@@ -70,17 +57,10 @@ export class SynthA11y implements SoundPreset {
     lpf.Q.value = 1.5;
     this.lpf = lpf;
 
-    const notch = ctx.createBiquadFilter();
-    notch.type = 'notch';
-    notch.frequency.value = 660;
-    notch.Q.value = 8;
+    // --- Distortion ---
 
-    // --- Waveshaper ---
-
-    const waveshaper = ctx.createWaveShaper();
-    waveshaper.curve = makeDistortionCurve(0);
-    waveshaper.oversample = '4x';
-    this.waveshaper = waveshaper;
+    const distortion = new Distortion(ctx);
+    this.distortion = distortion;
 
     // --- LFO → chord amplitude ---
 
@@ -99,10 +79,9 @@ export class SynthA11y implements SoundPreset {
 
     // --- Signal chain ---
 
-    chordMix.connect(waveshaper);
-    waveshaper.connect(hpf);
-    hpf.connect(notch);
-    notch.connect(lpf);
+    chordMix.connect(distortion.node);
+    distortion.node.connect(eq.input);
+    eq.output.connect(lpf);
     lpf.connect(destination);
 
     // --- Oscillators ---
@@ -126,28 +105,39 @@ export class SynthA11y implements SoundPreset {
     if (!this.ctx) {
       return;
     }
-    const t = this.ctx.currentTime;
 
     // LPF cutoff — muffled at idle, bright at load
-    this.lpf?.frequency.setTargetAtTime(metricToFilterCutoff(value), t, GLIDE_TIME);
+    if (this.lpf) {
+      this.glide.apply(this.lpf.frequency, metricToFilterCutoff(value), this.ctx);
+    }
 
-    // LFO rate — calm to agitated
-    const lfoRate = LFO_MIN_RATE + value * (LFO_MAX_RATE - LFO_MIN_RATE);
-    this.lfo?.frequency.setTargetAtTime(lfoRate, t, GLIDE_TIME);
+    // LFO rate — calm to agitated (exponential for perceptually uniform steps)
+    const lfoRate = LFO_MIN_RATE * Math.pow(LFO_MAX_RATE / LFO_MIN_RATE, value);
+    if (this.lfo) {
+      this.glide.apply(this.lfo.frequency, lfoRate, this.ctx);
+    }
 
-    // Distortion — clean to gritty
-    if (this.waveshaper) {
-      this.waveshaper.curve = makeDistortionCurve(value * MAX_DISTORTION);
+    // Distortion — only kicks in above 90% CPU (0.81 after power curve in DataScaler)
+    const DISTORTION_THRESHOLD = 0.81;
+    if (value >= DISTORTION_THRESHOLD) {
+      const t = (value - DISTORTION_THRESHOLD) / (1 - DISTORTION_THRESHOLD);
+      this.distortion?.setDrive(t * MAX_DISTORTION);
+    } else {
+      this.distortion?.setDrive(0);
     }
   }
 
   stop(): void {
-    this.oscillators.forEach((osc) => osc.stop());
+    this.oscillators.forEach((osc) => {
+      osc.stop();
+      osc.disconnect();
+    });
     this.lfo?.stop();
+    this.lfo?.disconnect();
     this.oscillators = [];
     this.lfo = null;
     this.lpf = null;
-    this.waveshaper = null;
+    this.distortion = null;
     this.ctx = null;
   }
 }

@@ -41,6 +41,10 @@ export class MasterChain {
   }
 
   destroy(): void {
+    // Disconnect immediately so audio stops before the async close() completes
+    this.input.disconnect();
+    this.volumeGain.disconnect();
+    this.limiter.disconnect();
     this.ctx.close();
   }
 }
