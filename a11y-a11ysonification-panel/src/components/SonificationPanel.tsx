@@ -31,7 +31,7 @@ const DISTORTION_SAMPLES = 256;
 const MAX_DISTORTION = 8.0;
 
 
-function makeDistortionCurve(drive: number): Float32Array {
+function makeDistortionCurve(drive: number): Float32Array<ArrayBuffer> {
   const curve = new Float32Array(DISTORTION_SAMPLES);
   for (let i = 0; i < DISTORTION_SAMPLES; i++) {
     const x = (i * 2) / DISTORTION_SAMPLES - 1;
