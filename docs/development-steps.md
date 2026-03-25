@@ -26,3 +26,20 @@
 - Node 22 was installed via nvm to meet the requirements of `@grafana/create-plugin` (v7.0.8). An `.nvmrc` file was added to the repo root so contributors can run `nvm use` to switch to the correct version.
 - The dev container was updated to include the `ghcr.io/devcontainers/features/node:1` feature (Node 22). The discontinued `devcontainers-contrib` OpenTofu feature reference was replaced with `devcontainers-extra`.
 - The Grafana panel plugin was scaffolded using `npx @grafana/create-plugin@latest` as a **panel** plugin (`a11y-a11ysonification-panel`). This generates the default template with React/TypeScript source, provisioning, E2E tests (Playwright), Docker dev environment, and GitHub Actions for CI/releases.
+
+## Session 4 — Audio Architecture and Dev Container Split
+
+- The monolithic `SonificationPanel.tsx` was refactored into a modular audio architecture under `src/audio/`:
+  - `SoundPreset.ts` — interface that all sound presets implement (`start`, `update`, `stop`).
+  - `MasterChain.ts` — shared output chain (volume control → safety limiter → speakers). Owns the `AudioContext`; presets connect into `master.input`.
+  - `DataScaler.ts` — extracts the latest numeric value from Grafana panel data and normalizes it to 0–1.
+  - `presets/SynthA11y.ts` — the existing sawtooth chord sound extracted as the first preset ("Synth A11y"), with metric-driven LPF cutoff, LFO rate, and waveshaper distortion.
+- `SonificationPanel.tsx` was slimmed to a thin React component that wires together the MasterChain, a preset, and the UI (play/stop, volume slider, status).
+- The design supports 3 metrics × 3 presets — new sounds are added by creating a class in `presets/` implementing `SoundPreset`.
+- A second dev container was added at `.devcontainer/plugin-dev/` for lightweight plugin hot development:
+  - Base image: `mcr.microsoft.com/devcontainers/javascript-node:22-bookworm` (pinned to Bookworm to avoid Debian Trixie/Moby incompatibility with docker-in-docker).
+  - Features: Docker-in-Docker, Git, GitHub CLI only (no Java, Azure CLI, or OpenTofu).
+  - `postCreateCommand` runs `npm install` in the plugin directory.
+  - The original full-build dev container at `.devcontainer/devcontainer.json` remains unchanged for end-to-end work.
+- VS Code now prompts to choose between "A11y - Plugin Hot Dev" and "A11y - Audible Observability Tool" when reopening in a container.
+- The plugin dev workflow uses two terminals: `npm run dev` (webpack watch) + `npm run server` (Grafana via Docker Compose with plugin mounted). TestData is used as the data source — no sample app or Prometheus needed during plugin development.

@@ -16,7 +16,56 @@ This repository was created in order to develop, maintain and host documentation
 
 - Grafana/Prometheus based
 
-## How to clone, run locally and deploy
+## How to Run Locally
+
+### Dev Containers
+
+Two VS Code dev containers are provided (`.devcontainer/`):
+
+| Container | Use case |
+|---|---|
+| **A11y - Plugin Hot Dev** | Plugin development only — Node 22, Docker. Lightweight and fast. |
+| **A11y - Audible Observability Tool** | Full stack — Java 21, Node 22, Azure CLI, OpenTofu. For sample app, infra, and end-to-end work. |
+
+Open the repo in VS Code → **Dev Containers: Reopen in Container** → pick the one you need.
+
+### Plugin Hot Dev (two terminals)
+
+```bash
+# Terminal 1 — watch and rebuild on save
+cd a11y-a11ysonification-panel && npm run dev
+
+# Terminal 2 — run Grafana with plugin mounted
+cd a11y-a11ysonification-panel && npm run server
+```
+
+Open http://localhost:3000 (admin / admin). A provisioned sample dashboard with TestData is included — no external data source needed.
+
+> **Port conflict?** Stop any existing Grafana first: `docker stop grafana`
+
+### Full Stack (sample app + monitoring)
+
+```bash
+docker network create a11y-net
+cd sample-app && docker compose up -d --build
+cd monitoring && docker compose up -d
+```
+
+### Audio Architecture
+
+The sonification engine lives in `a11y-a11ysonification-panel/src/audio/`:
+
+```
+SoundPreset.ts          — interface all sound presets implement
+MasterChain.ts          — shared output chain: volume → safety limiter → speakers
+DataScaler.ts           — extracts Grafana metric data, normalizes to 0–1
+presets/
+  SynthA11y.ts          — sawtooth chord with metric-driven filter, LFO, distortion
+```
+
+New sounds are added by creating a class in `presets/` implementing the `SoundPreset` interface. Goal: 3 metrics x 3 presets.
+
+### Cloud Deployment
 
 - Include links here
 

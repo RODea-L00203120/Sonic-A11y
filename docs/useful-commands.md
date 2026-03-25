@@ -50,6 +50,15 @@ nvm use
 node --version
 ```
 
+## Dev Containers
+
+```bash
+# In VS Code: Ctrl+Shift+P → "Dev Containers: Reopen in Container"
+# Choose:
+#   "A11y - Plugin Hot Dev"              — Node 22 + Docker only (plugin development)
+#   "A11y - Audible Observability Tool"  — Full stack (Java, Node, Azure CLI, OpenTofu)
+```
+
 ## Grafana Plugin Development
 
 ```bash
@@ -58,13 +67,23 @@ cd a11y-a11ysonification-panel
 # Install dependencies
 npm install
 
-# Build (and watch) plugin frontend
+# Terminal 1 — build and watch (rebuilds on save)
 npm run dev
 
-# Start Grafana dev server (from plugin directory)
-docker compose up
+# Terminal 2 — start Grafana with plugin mounted
+npm run server
 
-# Open Grafana at http://localhost:3000
+# Open Grafana at http://localhost:3000 (admin/admin)
+# A provisioned sample dashboard with TestData is included
+
+# If port 3000 is already in use (e.g. monitoring stack Grafana)
+docker stop grafana
+
+# Type check
+npm run typecheck
+
+# Lint
+npm run lint
 ```
 
 ## Docker (Local Development)
