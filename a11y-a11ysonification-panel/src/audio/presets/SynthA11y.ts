@@ -35,7 +35,7 @@ function metricToFilterCutoff(value: number): number {
  *   oscillators → chordMix → waveshaper → HPF → notch → LPF → destination
  */
 export class SynthA11y implements SoundPreset {
-  readonly name = 'Synth A11y';
+  readonly name = 'Default';
 
   private ctx: AudioContext | null = null;
   private oscillators: OscillatorNode[] = [];
