@@ -1,8 +1,29 @@
 /**
+ * Normalised metric values passed to presets on each update.
+ * All values are 0–1 after per-metric perceptual scaling.
+ */
+export interface MetricValues {
+  cpu: number;
+  ram: number;
+  errors: number;
+}
+
+/**
+ * A channel destination map for connecting preset outputs
+ * to per-metric channel strips.
+ */
+export interface ChannelDestinations {
+  cpu: AudioNode;
+  ram: AudioNode;
+  errors: AudioNode;
+}
+
+/**
  * Interface that all sonification presets must implement.
  *
- * Each preset receives a normalized metric value (0–1) and connects
- * its output to the MasterChain's input node.
+ * Each preset defines the complete sound design for all metrics.
+ * It receives per-metric destination nodes to connect its outputs,
+ * and a metrics object on each update.
  */
 export interface SoundPreset {
   /** Display name shown in the UI */
@@ -10,15 +31,14 @@ export interface SoundPreset {
 
   /**
    * Build the audio graph and start generating sound.
-   * Connect final output to the provided destination node.
+   * Connect each metric's sound to the corresponding destination.
    */
-  start(ctx: AudioContext, destination: AudioNode): void;
+  start(ctx: AudioContext, destinations: ChannelDestinations): void;
 
   /**
-   * Called when the metric value changes.
-   * @param value normalized 0–1
+   * Called when metric values change.
    */
-  update(value: number): void;
+  update(metrics: MetricValues): void;
 
   /** Tear down oscillators and release resources. */
   stop(): void;

@@ -1,12 +1,12 @@
 /**
- * Static EQ shaping for the Synth A11y preset.
+ * Static EQ shaping for the Default preset.
  *
  * Chain: input → HPF (remove mud) → notch (tame harshness) → output
  *
  * The data-driven LPF remains in the preset itself since brightness
  * control is core to the sonification mapping.
  */
-export class SynthA11yEQ {
+export class DefaultEQ {
   /** Connect signal into this node. */
   readonly input: AudioNode;
   /** Connect this node to the next stage. */

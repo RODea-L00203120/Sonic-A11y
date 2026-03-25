@@ -43,3 +43,17 @@
   - The original full-build dev container at `.devcontainer/devcontainer.json` remains unchanged for end-to-end work.
 - VS Code now prompts to choose between "A11y - Plugin Hot Dev" and "A11y - Audible Observability Tool" when reopening in a container.
 - The plugin dev workflow uses two terminals: `npm run dev` (webpack watch) + `npm run server` (Grafana via Docker Compose with plugin mounted). TestData is used as the data source — no sample app or Prometheus needed during plugin development.
+
+## Session 5 — Sound Design, Perceptual Scaling, and Architecture Refactor
+
+- Fixed stop button not silencing audio — nodes now disconnect before async `AudioContext.close()`.
+- Dashboard switched from static `raw_frame` to `random_walk` with 30s refresh, 5m window.
+- Introduced perceptual CPU scaling (`scalers/CpuScaler.ts`) using Stevens' Power Law (exponent 2.0) — compresses idle range, expands critical range. `DataScaler` now only extracts raw values; scaling is per-metric.
+- Extracted reusable effects into `audio/effects/`: `Glide`, `LFO`, `Distortion`, `DefaultEQ`, `Reverb`.
+- LFO rate mapping changed from linear to exponential. Distortion restricted to 90%+ CPU.
+- Added FM bell earcon for error metric with reverb tail and `ErrorTrigger` cooldown logic.
+- Refactored panel UI into modular components: `TransportBar`, `MetricChannel`, `MasterVolume`. Power icon replaces play/stop, bell icons for mute, preset dropdown labelled.
+- Added `ChannelStrip` (gain + pan per metric) between preset outputs and `MasterChain`.
+- `SoundPreset` interface updated to accept `MetricValues` object and `ChannelDestinations` for multi-metric routing.
+- Major OOP refactor: introduced `SoundSource` interface and `BasePreset` abstract class. Presets now compose reusable sounds from `audio/sounds/` rather than containing all logic inline. `DefaultPreset` is ~20 lines.
+- File structure: `sounds/` (reusable sound sources), `effects/` (DSP modules), `scalers/` (per-metric data scaling), `presets/<name>/` (preset composition).
