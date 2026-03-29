@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GrafanaTheme2, PanelProps } from '@grafana/data';
-import { ComboboxOption } from '@grafana/ui';
+import { ComboboxOption, useStyles2 } from '@grafana/ui';
 import { SonificationOptions } from 'types';
 import { css, cx } from '@emotion/css';
-import { useStyles2 } from '@grafana/ui';
 import { getDataSourceSrv, getBackendSrv } from '@grafana/runtime';
 import { MasterChain } from '../audio/MasterChain';
 import { ChannelStrip } from '../audio/ChannelStrip';
@@ -172,8 +171,6 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
   const cpu = rawCpu !== null ? scaleCpu(rawCpu) : 0;
   const ram = rawRam !== null ? scaleRam(rawRam) : 0;
   const errors = rawErrors !== null ? rawErrors : 0;
-
-  const hasData = rawCpu !== null || rawRam !== null || rawErrors !== null;
 
   useEffect(() => {
     presetRef.current?.update({ cpu, ram, errors });
