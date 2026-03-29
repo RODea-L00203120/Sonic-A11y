@@ -8,11 +8,15 @@ const LPF_MIN_FREQ = 300;
 const LPF_MAX_FREQ = 15000;
 const CHORD_FREQS = [130.81, 164.81, 196.0, 261.63, 329.63, 392.0]; // C major, C3–G4
 const CHORD_GAINS = [1.0, 0.7, 0.9, 0.6, 0.4, 0.5];
-const LFO_MIN_RATE = 0.3;
+const LFO_MIN_RATE = 0.05;
 const LFO_MAX_RATE = 6.0;
-const LFO_DEPTH = 0.1;
+const LFO_DEPTH = 0.2;
+const LFO_CRITICAL_DEPTH = 0.5;
+const LFO_CRITICAL_THRESHOLD = 0.81; // ~90% raw CPU after Stevens' power law
+const LIGHT_DISTORTION = 3.0;
 const MAX_DISTORTION = 8.0;
-const DISTORTION_THRESHOLD = 0.81;
+const DISTORTION_ELEVATED = 0.60;
+const DISTORTION_CRITICAL = 0.85;
 const GLIDE_DURATION = 3.0;
 
 function metricToFilterCutoff(value: number): number {
@@ -23,8 +27,8 @@ function metricToFilterCutoff(value: number): number {
  * CPU sound source — sawtooth chord with metric-driven brightness.
  *
  * Chain: oscillators → chordMix → distortion → EQ → LPF → destination
- * LFO: sine, rate driven by metric (0.3–6 Hz)
- * Distortion: kicks in above 90% CPU only
+ * LFO: sine, rate driven by metric (0.05–6 Hz), near-silent at idle
+ * Distortion: two-stage — light (60–85%), heavy (85–100%)
  */
 export class CpuDrone implements SoundSource {
   private ctx: AudioContext | null = null;
@@ -90,9 +94,22 @@ export class CpuDrone implements SoundSource {
     const lfoRate = LFO_MIN_RATE * Math.pow(LFO_MAX_RATE / LFO_MIN_RATE, value);
     this.lfo?.setRate(lfoRate);
 
-    if (value >= DISTORTION_THRESHOLD) {
-      const t = (value - DISTORTION_THRESHOLD) / (1 - DISTORTION_THRESHOLD);
-      this.distortion?.setDrive(t * MAX_DISTORTION);
+    // Ramp LFO depth above 90% CPU for increased saliency
+    if (value >= LFO_CRITICAL_THRESHOLD) {
+      const t = (value - LFO_CRITICAL_THRESHOLD) / (1 - LFO_CRITICAL_THRESHOLD);
+      this.lfo?.setDepth(LFO_DEPTH + t * (LFO_CRITICAL_DEPTH - LFO_DEPTH));
+    } else {
+      this.lfo?.setDepth(LFO_DEPTH);
+    }
+
+    if (value >= DISTORTION_CRITICAL) {
+      // 85–100%: heavy distortion (3–8 drive)
+      const t = (value - DISTORTION_CRITICAL) / (1 - DISTORTION_CRITICAL);
+      this.distortion?.setDrive(LIGHT_DISTORTION + t * (MAX_DISTORTION - LIGHT_DISTORTION));
+    } else if (value >= DISTORTION_ELEVATED) {
+      // 60–85%: light distortion (0–3 drive)
+      const t = (value - DISTORTION_ELEVATED) / (DISTORTION_CRITICAL - DISTORTION_ELEVATED);
+      this.distortion?.setDrive(t * LIGHT_DISTORTION);
     } else {
       this.distortion?.setDrive(0);
     }
