@@ -8,6 +8,7 @@ import { MasterChain } from '../audio/MasterChain';
 import { ChannelStrip } from '../audio/ChannelStrip';
 import { extractLatestValue } from '../audio/DataScaler';
 import { scaleCpu } from '../audio/scalers/CpuScaler';
+import { scaleRam } from '../audio/scalers/RamScaler';
 import { SoundPreset } from '../audio/SoundPreset';
 import { DefaultPreset } from '../audio/presets/default/DefaultPreset';
 import { TransportBar } from './TransportBar';
@@ -80,13 +81,14 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
   const [errorsVolume, setErrorsVolume] = useState(80);
   const [errorsPan, setErrorsPan] = useState(0);
 
-  // --- Data extraction ---
-  // For now, using same random walk data for all metrics (only CPU has real data)
-  const rawValue = extractLatestValue(data);
-  const cpu = rawValue !== null ? scaleCpu(rawValue) : 0;
-  // RAM/errors: use same test data source for now, will be separate queries later
-  const ram = cpu;
-  const errors = 1; // Fire earcon on every refresh for testing
+  // --- Data extraction (series 0=CPU, 1=RAM, 2=Errors) ---
+  const rawCpu = extractLatestValue(data, 0);
+  const rawRam = extractLatestValue(data, 1);
+  const rawErrors = extractLatestValue(data, 2);
+
+  const cpu = rawCpu !== null ? scaleCpu(rawCpu) : 0;
+  const ram = rawRam !== null ? scaleRam(rawRam) : 0;
+  const errors = rawErrors !== null ? rawErrors : 0;
 
   useEffect(() => {
     presetRef.current?.update({ cpu, ram, errors });
@@ -230,8 +232,12 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
       </div>
 
       <div className={styles.statusBar}>
-        {rawValue !== null
-          ? `CPU: ${Math.min(100, Math.max(0, rawValue)).toFixed(1)}% | Preset: Default`
+        {rawCpu !== null || rawRam !== null
+          ? [
+              rawCpu !== null ? `CPU: ${Math.min(100, Math.max(0, rawCpu)).toFixed(1)}%` : 'CPU: —',
+              rawRam !== null ? `RAM: ${Math.min(100, Math.max(0, rawRam)).toFixed(1)}%` : 'RAM: —',
+              'Preset: Default',
+            ].join(' | ')
           : 'No data'}
       </div>
     </div>
