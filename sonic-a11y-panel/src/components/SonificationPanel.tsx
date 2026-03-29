@@ -25,8 +25,8 @@ const PRESET_OPTIONS: Array<ComboboxOption<string>> = [
 const PANEL_QUERIES_VALUE = '__panel__';
 
 const PROMETHEUS_QUERIES = {
-  cpu: 'process_cpu_usage * 100',
-  ram: 'jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} * 100',
+  cpu: 'process_cpu_usage * on() group_left system_cpu_count',
+  ram: 'sum(jvm_memory_used_bytes{area="heap"}) / sum(jvm_memory_max_bytes{area="heap"})',
   errors: 'rate(logback_events_total{level="error"}[1m])',
 };
 
@@ -81,7 +81,7 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
 
   const dataSourceOptions = useMemo<Array<ComboboxOption<string>>>(() => {
     const options: Array<ComboboxOption<string>> = [
-      { label: 'Panel Queries', value: PANEL_QUERIES_VALUE },
+      { label: 'Test Data', value: PANEL_QUERIES_VALUE },
     ];
     try {
       const datasources = getDataSourceSrv().getList({ metrics: true });
@@ -127,13 +127,17 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
           return null;
         };
 
+        const cpuRatio = extract(cpuRes);
+        const ramRatio = extract(ramRes);
         setPrometheusData({
-          cpu: extract(cpuRes),
-          ram: extract(ramRes),
+          cpu: cpuRatio !== null ? cpuRatio * 100 : null,
+          ram: ramRatio !== null ? ramRatio * 100 : null,
           errors: extract(errorsRes),
         });
       } catch {
-        // Prometheus unavailable — keep last values
+        if (!cancelled) {
+          setPrometheusData({ cpu: null, ram: null, errors: null });
+        }
       }
     };
 
@@ -169,9 +173,11 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
   const ram = rawRam !== null ? scaleRam(rawRam) : 0;
   const errors = rawErrors !== null ? rawErrors : 0;
 
+  const hasData = rawCpu !== null || rawRam !== null || rawErrors !== null;
+
   useEffect(() => {
     presetRef.current?.update({ cpu, ram, errors });
-  }, [data, cpu, ram, errors]);
+  }, [data, cpu, ram, errors, selectedDataSource]);
 
   // Channel strip live-updates
   useEffect(() => {
@@ -316,8 +322,8 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
       <div className={styles.statusBar}>
         {rawCpu !== null || rawRam !== null
           ? [
-              rawCpu !== null ? `CPU: ${Math.min(100, Math.max(0, rawCpu)).toFixed(1)}%` : 'CPU: —',
-              rawRam !== null ? `RAM: ${Math.min(100, Math.max(0, rawRam)).toFixed(1)}%` : 'RAM: —',
+              rawCpu !== null ? `CPU: ${Math.min(100, Math.max(0, rawCpu)).toFixed(rawCpu < 1 ? 2 : 1)}%` : 'CPU: —',
+              rawRam !== null ? `RAM: ${Math.min(100, Math.max(0, rawRam)).toFixed(rawRam < 1 ? 2 : 1)}%` : 'RAM: —',
               'Preset: Default',
             ].join(' | ')
           : 'No data'}

@@ -9,7 +9,7 @@ const LPF_MIN_FREQ = 300;
 const LPF_MAX_FREQ = 8000;
 const REVERB_MAX_MIX = 0.7;    // Spacious at idle
 const REVERB_MIN_MIX = 0.05;   // Near-dry at critical
-const GLIDE_DURATION = 3.0;
+const GLIDE_DURATION = 2.0;
 
 function metricToFilterCutoff(value: number): number {
   return LPF_MIN_FREQ * Math.pow(LPF_MAX_FREQ / LPF_MIN_FREQ, value);
@@ -30,6 +30,7 @@ export class RamDrone implements SoundSource {
   private oscillator: OscillatorNode | null = null;
   private lpf: BiquadFilterNode | null = null;
   private reverb: Reverb | null = null;
+  private outputGain: GainNode | null = null;
 
   start(ctx: AudioContext, destination: AudioNode): void {
     this.ctx = ctx;
@@ -57,15 +58,36 @@ export class RamDrone implements SoundSource {
     osc.connect(oscGain);
     oscGain.connect(eq.input);
     eq.output.connect(lpf);
+    const outputGain = ctx.createGain();
+    outputGain.gain.value = 0;
+    this.outputGain = outputGain;
+
     lpf.connect(reverb.input);
-    reverb.output.connect(destination);
+    reverb.output.connect(outputGain);
+    outputGain.connect(destination);
 
     osc.start();
   }
 
+  // 5% raw RAM after Stevens' power law = (5/100)^2 = 0.0025
+  private static readonly FADE_IN_THRESHOLD = 0.0025;
+
   update(value: number): void {
     if (!this.ctx) {
       return;
+    }
+
+    // 0% = off, 0-5% fades in, 5%+ = full
+    if (this.outputGain) {
+      let vol: number;
+      if (value <= 0) {
+        vol = 0;
+      } else if (value < RamDrone.FADE_IN_THRESHOLD) {
+        vol = value / RamDrone.FADE_IN_THRESHOLD;
+      } else {
+        vol = 1;
+      }
+      this.outputGain.gain.setTargetAtTime(vol, this.ctx.currentTime, 0.1);
     }
 
     // Brightness: LPF cutoff tracks RAM%
@@ -98,6 +120,7 @@ export class RamDrone implements SoundSource {
       this.reverb = null;
     }
     this.lpf = null;
+    this.outputGain = null;
     this.ctx = null;
   }
 }

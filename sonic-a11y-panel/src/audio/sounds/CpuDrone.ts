@@ -17,7 +17,7 @@ const LIGHT_DISTORTION = 3.0;
 const MAX_DISTORTION = 8.0;
 const DISTORTION_ELEVATED = 0.60;
 const DISTORTION_CRITICAL = 0.85;
-const GLIDE_DURATION = 3.0;
+const GLIDE_DURATION = 2.0;
 
 function metricToFilterCutoff(value: number): number {
   return LPF_MIN_FREQ * Math.pow(LPF_MAX_FREQ / LPF_MIN_FREQ, value);
@@ -37,6 +37,7 @@ export class CpuDrone implements SoundSource {
   private lfo: LFO | null = null;
   private lpf: BiquadFilterNode | null = null;
   private distortion: Distortion | null = null;
+  private outputGain: GainNode | null = null;
 
   start(ctx: AudioContext, destination: AudioNode): void {
     this.ctx = ctx;
@@ -64,10 +65,15 @@ export class CpuDrone implements SoundSource {
     lfo.connect(chordMix.gain);
     lfo.start();
 
+    const outputGain = ctx.createGain();
+    outputGain.gain.value = 0;
+    this.outputGain = outputGain;
+
     chordMix.connect(distortion.node);
     distortion.node.connect(eq.input);
     eq.output.connect(lpf);
-    lpf.connect(destination);
+    lpf.connect(outputGain);
+    outputGain.connect(destination);
 
     this.oscillators = CHORD_FREQS.map((freq, i) => {
       const osc = ctx.createOscillator();
@@ -82,9 +88,25 @@ export class CpuDrone implements SoundSource {
     });
   }
 
+  // 5% raw CPU after Stevens' power law = (5/100)^2 = 0.0025
+  private static readonly FADE_IN_THRESHOLD = 0.0025;
+
   update(value: number): void {
     if (!this.ctx) {
       return;
+    }
+
+    // 0% = off, 0-5% fades in, 5%+ = full
+    if (this.outputGain) {
+      let vol: number;
+      if (value <= 0) {
+        vol = 0;
+      } else if (value < CpuDrone.FADE_IN_THRESHOLD) {
+        vol = value / CpuDrone.FADE_IN_THRESHOLD;
+      } else {
+        vol = 1;
+      }
+      this.outputGain.gain.setTargetAtTime(vol, this.ctx.currentTime, 0.1);
     }
 
     if (this.lpf) {
@@ -125,6 +147,7 @@ export class CpuDrone implements SoundSource {
     this.lfo = null;
     this.lpf = null;
     this.distortion = null;
+    this.outputGain = null;
     this.ctx = null;
   }
 }

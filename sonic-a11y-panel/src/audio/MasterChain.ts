@@ -40,6 +40,16 @@ export class MasterChain {
     this.volumeGain.gain.value = value;
   }
 
+  /** Mute by disconnecting the limiter from speakers — guaranteed silence. */
+  mute(): void {
+    try { this.limiter.disconnect(this.ctx.destination); } catch { /* already disconnected */ }
+  }
+
+  /** Unmute by reconnecting the limiter to speakers. */
+  unmute(): void {
+    try { this.limiter.connect(this.ctx.destination); } catch { /* already connected */ }
+  }
+
   destroy(): void {
     // Disconnect immediately so audio stops before the async close() completes
     this.input.disconnect();
