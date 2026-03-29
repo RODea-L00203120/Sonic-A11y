@@ -62,7 +62,7 @@ node --version
 ## Grafana Plugin Development
 
 ```bash
-cd a11y-a11ysonification-panel
+cd sonic-a11y-panel
 
 # Install dependencies
 npm install

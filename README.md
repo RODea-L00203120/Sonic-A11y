@@ -33,10 +33,10 @@ Open the repo in VS Code → **Dev Containers: Reopen in Container** → pick th
 
 ```bash
 # Terminal 1 — watch and rebuild on save
-cd a11y-a11ysonification-panel && npm run dev
+cd sonic-a11y-panel && npm run dev
 
 # Terminal 2 — run Grafana with plugin mounted
-cd a11y-a11ysonification-panel && npm run server
+cd sonic-a11y-panel && npm run server
 ```
 
 Open http://localhost:3000 (admin / admin). A provisioned sample dashboard with TestData is included — no external data source needed.
@@ -53,7 +53,7 @@ cd monitoring && docker compose up -d
 
 ### Audio Architecture
 
-The sonification engine lives in `a11y-a11ysonification-panel/src/audio/`:
+The sonification engine lives in `sonic-a11y-panel/src/audio/`:
 
 ```
 SoundPreset.ts          — interface all sound presets implement

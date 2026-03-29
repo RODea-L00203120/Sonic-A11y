@@ -49,8 +49,8 @@
           "scenarioId": "random_walk"
         }
       ],
-      "title": "A11y Sonification",
-      "type": "a11y-a11ysonification-panel"
+      "title": "Sonic-A11y",
+      "type": "sonic-a11y-panel"
     }
   ],
   "refresh": "30s",

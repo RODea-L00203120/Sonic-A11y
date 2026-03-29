@@ -22,3 +22,6 @@ Thumbs.db
 # Node (for Grafana plugin development)
 node_modules/
 dist/
+
+# Paper
+Sonic-A11y_Paper*

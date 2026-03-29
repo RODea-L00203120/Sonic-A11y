@@ -215,7 +215,7 @@ jobs:
       - name: Docker logs
         if: ${{ always() && steps.run-tests.outcome == 'failure' }}
         run: |
-          docker logs a11y-a11ysonification-panel >& grafana-server.log
+          docker logs sonic-a11y-panel >& grafana-server.log
 
       - name: Stop grafana docker
         run: docker compose down

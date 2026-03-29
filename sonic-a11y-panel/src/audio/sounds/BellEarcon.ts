@@ -43,7 +43,11 @@ export class BellEarcon implements SoundSource {
 
   stop(): void {
     this.destination = null;
-    this.reverb = null;
+    if (this.reverb) {
+      this.reverb.input.disconnect();
+      this.reverb.output.disconnect();
+      this.reverb = null;
+    }
     this.trigger.reset();
     this.ctx = null;
   }

@@ -25,7 +25,7 @@
 
 - Node 22 was installed via nvm to meet the requirements of `@grafana/create-plugin` (v7.0.8). An `.nvmrc` file was added to the repo root so contributors can run `nvm use` to switch to the correct version.
 - The dev container was updated to include the `ghcr.io/devcontainers/features/node:1` feature (Node 22). The discontinued `devcontainers-contrib` OpenTofu feature reference was replaced with `devcontainers-extra`.
-- The Grafana panel plugin was scaffolded using `npx @grafana/create-plugin@latest` as a **panel** plugin (`a11y-a11ysonification-panel`). This generates the default template with React/TypeScript source, provisioning, E2E tests (Playwright), Docker dev environment, and GitHub Actions for CI/releases.
+- The Grafana panel plugin was scaffolded using `npx @grafana/create-plugin@latest` as a **panel** plugin (`sonic-a11y-panel`). This generates the default template with React/TypeScript source, provisioning, E2E tests (Playwright), Docker dev environment, and GitHub Actions for CI/releases.
 
 ## Session 4 — Audio Architecture and Dev Container Split
 

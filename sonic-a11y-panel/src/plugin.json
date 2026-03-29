@@ -1,13 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "panel",
-  "name": "A11y Sonification",
-  "id": "a11y-a11ysonification-panel",
+  "name": "Sonic-A11y",
+  "id": "sonic-a11y-panel",
   "info": {
     "keywords": ["panel"],
     "description": "",
     "author": {
-      "name": "A11y"
+      "name": "Ronan O'Dea"
     },
     "logos": {
       "small": "img/logo.svg",

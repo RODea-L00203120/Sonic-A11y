@@ -16,7 +16,7 @@
     }
   },
 
-  "postCreateCommand": "cd a11y-a11ysonification-panel && npm install",
+  "postCreateCommand": "cd sonic-a11y-panel && npm install",
 
   "remoteUser": "node"
 }
