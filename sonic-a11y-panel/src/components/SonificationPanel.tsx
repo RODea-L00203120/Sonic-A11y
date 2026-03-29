@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GrafanaTheme2, PanelProps } from '@grafana/data';
 import { ComboboxOption } from '@grafana/ui';
 import { SonificationOptions } from 'types';
 import { css, cx } from '@emotion/css';
 import { useStyles2 } from '@grafana/ui';
+import { getDataSourceSrv, getBackendSrv } from '@grafana/runtime';
 import { MasterChain } from '../audio/MasterChain';
 import { ChannelStrip } from '../audio/ChannelStrip';
 import { extractLatestValue } from '../audio/DataScaler';
@@ -20,6 +21,14 @@ interface Props extends PanelProps<SonificationOptions> {}
 const PRESET_OPTIONS: Array<ComboboxOption<string>> = [
   { label: 'Default', value: 'default' },
 ];
+
+const PANEL_QUERIES_VALUE = '__panel__';
+
+const PROMETHEUS_QUERIES = {
+  cpu: 'process_cpu_usage * 100',
+  ram: 'jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} * 100',
+  errors: 'rate(logback_events_total{level="error"}[1m])',
+};
 
 const getStyles = (theme: GrafanaTheme2) => ({
   panel: css({
@@ -64,6 +73,75 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
   const [playing, setPlaying] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<string>('default');
 
+  // --- Data source selection ---
+  const [selectedDataSource, setSelectedDataSource] = useState<string>(PANEL_QUERIES_VALUE);
+  const [prometheusData, setPrometheusData] = useState<{ cpu: number | null; ram: number | null; errors: number | null }>({
+    cpu: null, ram: null, errors: null,
+  });
+
+  const dataSourceOptions = useMemo<Array<ComboboxOption<string>>>(() => {
+    const options: Array<ComboboxOption<string>> = [
+      { label: 'Panel Queries', value: PANEL_QUERIES_VALUE },
+    ];
+    try {
+      const datasources = getDataSourceSrv().getList({ metrics: true });
+      for (const ds of datasources) {
+        if (ds.type === 'prometheus' && ds.uid) {
+          options.push({ label: ds.name, value: ds.uid });
+        }
+      }
+    } catch {
+      // getDataSourceSrv may not be available in test
+    }
+    return options;
+  }, []);
+
+  // Poll Prometheus when selected
+  useEffect(() => {
+    if (selectedDataSource === PANEL_QUERIES_VALUE) {
+      setPrometheusData({ cpu: null, ram: null, errors: null });
+      return;
+    }
+
+    let cancelled = false;
+
+    const poll = async () => {
+      try {
+        const base = `/api/datasources/proxy/uid/${selectedDataSource}`;
+        const [cpuRes, ramRes, errorsRes] = await Promise.all([
+          getBackendSrv().get(`${base}/api/v1/query`, { query: PROMETHEUS_QUERIES.cpu }),
+          getBackendSrv().get(`${base}/api/v1/query`, { query: PROMETHEUS_QUERIES.ram }),
+          getBackendSrv().get(`${base}/api/v1/query`, { query: PROMETHEUS_QUERIES.errors }),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        const extract = (res: any): number | null => {
+          const result = res?.data?.result;
+          if (result && result.length > 0 && result[0].value) {
+            const val = parseFloat(result[0].value[1]);
+            return isNaN(val) ? null : val;
+          }
+          return null;
+        };
+
+        setPrometheusData({
+          cpu: extract(cpuRes),
+          ram: extract(ramRes),
+          errors: extract(errorsRes),
+        });
+      } catch {
+        // Prometheus unavailable — keep last values
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 5000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [selectedDataSource]);
+
   // --- Master volume ---
   const [masterVol, setMasterVol] = useState(50);
   const masterVolRef = useRef(0.5);
@@ -81,10 +159,11 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
   const [errorsVolume, setErrorsVolume] = useState(80);
   const [errorsPan, setErrorsPan] = useState(0);
 
-  // --- Data extraction (series 0=CPU, 1=RAM, 2=Errors) ---
-  const rawCpu = extractLatestValue(data, 0);
-  const rawRam = extractLatestValue(data, 1);
-  const rawErrors = extractLatestValue(data, 2);
+  // --- Data extraction ---
+  const usingPrometheus = selectedDataSource !== PANEL_QUERIES_VALUE;
+  const rawCpu = usingPrometheus ? prometheusData.cpu : extractLatestValue(data, 0);
+  const rawRam = usingPrometheus ? prometheusData.ram : extractLatestValue(data, 1);
+  const rawErrors = usingPrometheus ? prometheusData.errors : extractLatestValue(data, 2);
 
   const cpu = rawCpu !== null ? scaleCpu(rawCpu) : 0;
   const ram = rawRam !== null ? scaleRam(rawRam) : 0;
@@ -195,6 +274,9 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
         presetOptions={PRESET_OPTIONS}
         selectedPreset={selectedPreset}
         onPresetChange={setSelectedPreset}
+        dataSourceOptions={dataSourceOptions}
+        selectedDataSource={selectedDataSource}
+        onDataSourceChange={setSelectedDataSource}
       />
 
       <div className={styles.channelArea}>

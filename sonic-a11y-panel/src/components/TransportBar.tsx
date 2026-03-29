@@ -9,6 +9,9 @@ interface TransportBarProps {
   presetOptions: Array<ComboboxOption<string>>;
   selectedPreset: string;
   onPresetChange: (value: string) => void;
+  dataSourceOptions: Array<ComboboxOption<string>>;
+  selectedDataSource: string;
+  onDataSourceChange: (value: string) => void;
 }
 
 const getStyles = (theme: GrafanaTheme2) => ({
@@ -67,6 +70,9 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   presetOptions,
   selectedPreset,
   onPresetChange,
+  dataSourceOptions,
+  selectedDataSource,
+  onDataSourceChange,
 }) => {
   const styles = useStyles2(getStyles);
 
@@ -90,6 +96,20 @@ export const TransportBar: React.FC<TransportBarProps> = ({
             value={selectedPreset}
             onChange={(opt) => onPresetChange(opt.value)}
             placeholder="Select preset..."
+          />
+        </div>
+      </div>
+
+      <div className={styles.divider} />
+
+      <div className={styles.presetGroup}>
+        <span className={styles.presetLabel}>Source</span>
+        <div className={styles.presetSelect}>
+          <Combobox
+            options={dataSourceOptions}
+            value={selectedDataSource}
+            onChange={(opt) => onDataSourceChange(opt.value)}
+            placeholder="Select source..."
           />
         </div>
       </div>
