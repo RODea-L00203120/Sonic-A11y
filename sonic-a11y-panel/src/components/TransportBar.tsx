@@ -1,15 +1,15 @@
 import React from 'react';
-import { GrafanaTheme2 } from '@grafana/data';
+import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { css, cx } from '@emotion/css';
-import { Combobox, ComboboxOption, Icon, useStyles2 } from '@grafana/ui';
+import { Icon, RadioButtonGroup, useStyles2 } from '@grafana/ui';
 
 interface TransportBarProps {
   playing: boolean;
   onToggle: () => void;
-  presetOptions: Array<ComboboxOption<string>>;
+  presetOptions: Array<SelectableValue<string>>;
   selectedPreset: string;
   onPresetChange: (value: string) => void;
-  dataSourceOptions: Array<ComboboxOption<string>>;
+  dataSourceOptions: Array<SelectableValue<string>>;
   selectedDataSource: string;
   onDataSourceChange: (value: string) => void;
 }
@@ -77,7 +77,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   const styles = useStyles2(getStyles);
 
   return (
-    <div className={styles.bar}>
+    <div className={styles.bar} role="toolbar" aria-label="Sonification controls">
       <button
         className={cx(styles.powerBtn, playing && styles.powerBtnOn)}
         onClick={onToggle}
@@ -86,32 +86,30 @@ export const TransportBar: React.FC<TransportBarProps> = ({
         <Icon name="power" size="lg" />
       </button>
 
-      <div className={styles.divider} />
+      <div className={styles.divider} aria-hidden="true" />
 
       <div className={styles.presetGroup}>
         <span className={styles.presetLabel}>Preset</span>
-        <div className={styles.presetSelect}>
-          <Combobox
-            options={presetOptions}
-            value={selectedPreset}
-            onChange={(opt) => onPresetChange(opt.value)}
-            placeholder="Select preset..."
-          />
-        </div>
+        <RadioButtonGroup
+          options={presetOptions}
+          value={selectedPreset}
+          onChange={(value) => onPresetChange(value)}
+          size="sm"
+          aria-label="Preset"
+        />
       </div>
 
-      <div className={styles.divider} />
+      <div className={styles.divider} aria-hidden="true" />
 
       <div className={styles.presetGroup}>
         <span className={styles.presetLabel}>Source</span>
-        <div className={styles.presetSelect}>
-          <Combobox
-            options={dataSourceOptions}
-            value={selectedDataSource}
-            onChange={(opt) => onDataSourceChange(opt.value)}
-            placeholder="Select source..."
-          />
-        </div>
+        <RadioButtonGroup
+          options={dataSourceOptions}
+          value={selectedDataSource}
+          onChange={(value) => onDataSourceChange(value)}
+          size="sm"
+          aria-label="Data source"
+        />
       </div>
     </div>
   );

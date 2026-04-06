@@ -187,7 +187,7 @@
         <form id="benchmarkForm">
             <div class="form-group">
                 <label for="repetitions">Repetitions</label>
-                <input type="number" id="repetitions" name="repetitions" value="10" min="1" max="100">
+                <input type="number" id="repetitions" name="repetitions" value="10" min="1" max="1000">
                 <div class="help-text">Number of times to run each benchmark (higher = more accurate)</div>
             </div>
             
@@ -199,13 +199,13 @@
             
             <div class="form-group">
                 <label for="maxValue">Maximum Value</label>
-                <input type="number" id="maxValue" name="maxValue" value="100">
+                <input type="number" id="maxValue" name="maxValue" value="10000">
                 <div class="help-text">Maximum value for random array elements</div>
             </div>
             
             <div class="form-group">
                 <label for="sizes">Array Sizes</label>
-                <input type="text" id="sizes" name="sizes" value="100,1000,5000,10000" placeholder="100,1000,5000">
+                <input type="text" id="sizes" name="sizes" value="1000,5000,10000,50000,100000" placeholder="1000,5000,10000,50000">
                 <div class="help-text">Comma-separated list of array sizes to test</div>
             </div>
             

@@ -19,7 +19,7 @@ export class BellEarcon implements SoundSource {
   private ctx: AudioContext | null = null;
   private destination: AudioNode | null = null;
   private reverb: Reverb | null = null;
-  private readonly trigger = new ErrorTrigger(1.0);
+  private readonly trigger = new ErrorTrigger();
 
   start(ctx: AudioContext, destination: AudioNode): void {
     this.ctx = ctx;
@@ -36,7 +36,7 @@ export class BellEarcon implements SoundSource {
       return;
     }
 
-    if (this.trigger.shouldFire(value, this.ctx.currentTime)) {
+    if (this.trigger.shouldFire(value)) {
       this.fire();
     }
   }

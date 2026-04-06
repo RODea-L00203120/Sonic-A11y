@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GrafanaTheme2, PanelProps } from '@grafana/data';
-import { ComboboxOption, useStyles2 } from '@grafana/ui';
+import { GrafanaTheme2, PanelProps, SelectableValue } from '@grafana/data';
+import { useStyles2 } from '@grafana/ui';
 import { SonificationOptions } from 'types';
 import { css, cx } from '@emotion/css';
 import { getDataSourceSrv, getBackendSrv } from '@grafana/runtime';
@@ -17,7 +17,7 @@ import { MasterVolume } from './MasterVolume';
 
 interface Props extends PanelProps<SonificationOptions> {}
 
-const PRESET_OPTIONS: Array<ComboboxOption<string>> = [
+const PRESET_OPTIONS: Array<SelectableValue<string>> = [
   { label: 'Default', value: 'default' },
 ];
 
@@ -26,7 +26,15 @@ const PANEL_QUERIES_VALUE = '__panel__';
 const PROMETHEUS_QUERIES = {
   cpu: 'process_cpu_usage * on() group_left system_cpu_count',
   ram: 'sum(jvm_memory_used_bytes{area="heap"}) / sum(jvm_memory_max_bytes{area="heap"})',
-  errors: 'rate(logback_events_total{level="error"}[1m])',
+  errors: 'logback_events_total{level="error"}',
+};
+
+// Demo gain multipliers — amplify low-magnitude metrics for audible feedback.
+// Set to 1.0 for production use with real workloads.
+const DEMO_GAIN = {
+  cpu: 50,
+  ram: 1,
+  errors: 1,
 };
 
 const getStyles = (theme: GrafanaTheme2) => ({
@@ -78,8 +86,8 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
     cpu: null, ram: null, errors: null,
   });
 
-  const dataSourceOptions = useMemo<Array<ComboboxOption<string>>>(() => {
-    const options: Array<ComboboxOption<string>> = [
+  const dataSourceOptions = useMemo<Array<SelectableValue<string>>>(() => {
+    const options: Array<SelectableValue<string>> = [
       { label: 'Test Data', value: PANEL_QUERIES_VALUE },
     ];
     try {
@@ -95,7 +103,7 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
     return options;
   }, []);
 
-  // Poll Prometheus when selected
+  // Poll Prometheus on each dashboard refresh (driven by data.timeRange)
   useEffect(() => {
     if (selectedDataSource === PANEL_QUERIES_VALUE) {
       setPrometheusData({ cpu: null, ram: null, errors: null });
@@ -104,7 +112,7 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
 
     let cancelled = false;
 
-    const poll = async () => {
+    (async () => {
       try {
         const base = `/api/datasources/proxy/uid/${selectedDataSource}`;
         const [cpuRes, ramRes, errorsRes] = await Promise.all([
@@ -129,21 +137,19 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
         const cpuRatio = extract(cpuRes);
         const ramRatio = extract(ramRes);
         setPrometheusData({
-          cpu: cpuRatio !== null ? cpuRatio * 100 : null,
-          ram: ramRatio !== null ? ramRatio * 100 : null,
-          errors: extract(errorsRes),
+          cpu: cpuRatio !== null ? Math.min(100, cpuRatio * 100 * DEMO_GAIN.cpu) : null,
+          ram: ramRatio !== null ? Math.min(100, ramRatio * 100 * DEMO_GAIN.ram) : null,
+          errors: extract(errorsRes) !== null ? extract(errorsRes)! * DEMO_GAIN.errors : null,
         });
       } catch {
         if (!cancelled) {
           setPrometheusData({ cpu: null, ram: null, errors: null });
         }
       }
-    };
+    })();
 
-    poll();
-    const interval = setInterval(poll, 5000);
-    return () => { cancelled = true; clearInterval(interval); };
-  }, [selectedDataSource]);
+    return () => { cancelled = true; };
+  }, [selectedDataSource, data.timeRange]);
 
   // --- Master volume ---
   const [masterVol, setMasterVol] = useState(50);
@@ -171,6 +177,12 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
   const cpu = rawCpu !== null ? scaleCpu(rawCpu) : 0;
   const ram = rawRam !== null ? scaleRam(rawRam) : 0;
   const errors = rawErrors !== null ? rawErrors : 0;
+
+  const fmtPct = (v: number | null) =>
+    v !== null ? `${Math.min(100, Math.max(0, v)).toFixed(v < 1 ? 2 : 1)}%` : null;
+  const fmtCpu = fmtPct(rawCpu);
+  const fmtRam = fmtPct(rawRam);
+  const fmtErrors = rawErrors !== null ? Math.round(rawErrors).toString() : null;
 
   useEffect(() => {
     presetRef.current?.update({ cpu, ram, errors });
@@ -270,6 +282,8 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
           height: ${height}px;
         `
       )}
+      role="application"
+      aria-label="Sonic-A11y sonification panel"
     >
       <TransportBar
         playing={playing}
@@ -292,6 +306,7 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
             onVolumeChange={setCpuVolume}
             pan={cpuPan}
             onPanChange={setCpuPan}
+            metricValue={fmtCpu}
           />
           <MetricChannel
             label="RAM"
@@ -301,6 +316,7 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
             onVolumeChange={setRamVolume}
             pan={ramPan}
             onPanChange={setRamPan}
+            metricValue={fmtRam}
           />
           <MetricChannel
             label="Errors"
@@ -310,6 +326,7 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
             onVolumeChange={setErrorsVolume}
             pan={errorsPan}
             onPanChange={setErrorsPan}
+            metricValue={fmtErrors}
           />
         </div>
 
@@ -317,14 +334,15 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
       </div>
 
       <div className={styles.statusBar}>
-        {rawCpu !== null || rawRam !== null
+        {fmtCpu !== null || fmtRam !== null
           ? [
-              rawCpu !== null ? `CPU: ${Math.min(100, Math.max(0, rawCpu)).toFixed(rawCpu < 1 ? 2 : 1)}%` : 'CPU: —',
-              rawRam !== null ? `RAM: ${Math.min(100, Math.max(0, rawRam)).toFixed(rawRam < 1 ? 2 : 1)}%` : 'RAM: —',
+              `CPU: ${fmtCpu ?? '—'}`,
+              `RAM: ${fmtRam ?? '—'}`,
               'Preset: Default',
             ].join(' | ')
           : 'No data'}
       </div>
+
     </div>
   );
 };

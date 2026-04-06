@@ -42,7 +42,7 @@ export const MasterVolume: React.FC<MasterVolumeProps> = ({ volume, onVolumeChan
   const styles = useStyles2(getStyles);
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} role="group" aria-label="Master volume control" title={`Master volume: ${volume}%`}>
       <span className={styles.value}>{volume}%</span>
       <div className={styles.sliderWrap}>
         <Slider

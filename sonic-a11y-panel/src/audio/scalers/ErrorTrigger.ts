@@ -1,31 +1,27 @@
 /**
  * Determines when error earcons should fire.
  *
- * Tracks cooldown between triggers to prevent rapid-fire.
- * Returns true when a trigger should occur, false otherwise.
+ * Tracks the cumulative error count from Prometheus. Fires once per
+ * new error — only when the count increases from the previous poll.
  */
 export class ErrorTrigger {
-  private lastTriggerTime = 0;
-  private readonly cooldown: number;
+  private lastCount = -1;
 
-  /** @param cooldown — minimum seconds between triggers */
-  constructor(cooldown = 1.0) {
-    this.cooldown = cooldown;
-  }
+  /** Check if an earcon should fire given the current cumulative error count. */
+  shouldFire(value: number): boolean {
+    const prev = this.lastCount;
+    this.lastCount = value;
 
-  /** Check if an earcon should fire given the current error value and audio time. */
-  shouldFire(value: number, currentTime: number): boolean {
-    if (value <= 0) {
+    // First reading — store baseline, don't fire
+    if (prev < 0) {
       return false;
     }
-    if (currentTime - this.lastTriggerTime < this.cooldown) {
-      return false;
-    }
-    this.lastTriggerTime = currentTime;
-    return true;
+
+    // Fire only when count has increased
+    return value > prev;
   }
 
   reset(): void {
-    this.lastTriggerTime = 0;
+    this.lastCount = -1;
   }
 }

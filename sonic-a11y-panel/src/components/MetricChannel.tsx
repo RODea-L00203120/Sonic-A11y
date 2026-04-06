@@ -11,6 +11,8 @@ interface MetricChannelProps {
   onVolumeChange: (value: number) => void;
   pan: number;
   onPanChange: (value: number) => void;
+  /** Raw metric value for display in tooltip and screen reader (e.g. 42.5 for 42.5%) */
+  metricValue: string | null;
 }
 
 const getStyles = (theme: GrafanaTheme2) => ({
@@ -28,6 +30,15 @@ const getStyles = (theme: GrafanaTheme2) => ({
     color: theme.colors.text.primary,
     minWidth: 48,
     fontWeight: theme.typography.fontWeightMedium,
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    cursor: 'default',
+    '&:focus': {
+      outline: `2px solid ${theme.colors.primary.main}`,
+      outlineOffset: 2,
+      borderRadius: theme.shape.radius.default,
+    },
   }),
   volumeSlider: css({
     flex: 1,
@@ -58,20 +69,26 @@ export const MetricChannel: React.FC<MetricChannelProps> = ({
   onVolumeChange,
   pan,
   onPanChange,
+  metricValue,
 }) => {
   const styles = useStyles2(getStyles);
   const id = label.toLowerCase();
 
+  const panDirection = pan < 0 ? `${Math.abs(pan)}% left` : pan > 0 ? `${pan}% right` : 'center';
+  const muteLabel = muted ? `Unmute ${label}` : `Mute ${label}`;
+  const metricReadout = metricValue !== null ? `${label}: ${metricValue}` : `${label}: no data`;
+  const panDetail = `${label} pan: ${panDirection}`;
+
   return (
-    <div className={styles.row}>
-      <span className={styles.label}>{label}</span>
+    <div className={styles.row} role="group" aria-label={`${label} channel`}>
+      <button className={styles.label} title={metricReadout} tabIndex={0} type="button">{metricValue !== null ? `${label}: ${metricValue}` : label}</button>
       <IconButton
         name={muted ? 'bell-slash' : 'bell'}
-        tooltip={muted ? `Unmute ${label}` : `Mute ${label}`}
+        tooltip={muteLabel}
         size="md"
         onClick={onMuteToggle}
       />
-      <div className={styles.volumeSlider}>
+      <div className={styles.volumeSlider} title={`${label} volume: ${volume}%`}>
         <Slider
           min={0}
           max={100}
@@ -83,8 +100,8 @@ export const MetricChannel: React.FC<MetricChannelProps> = ({
           ariaLabelForHandle={`${label} volume`}
         />
       </div>
-      <div className={styles.panGroup}>
-        <span className={styles.panLabel}>L</span>
+      <div className={styles.panGroup} role="group" aria-label={`${label} stereo pan`} title={panDetail}>
+        <span className={styles.panLabel} aria-hidden="true">L</span>
         <div className={styles.panSlider}>
           <Slider
             min={-100}
@@ -94,10 +111,10 @@ export const MetricChannel: React.FC<MetricChannelProps> = ({
             step={1}
             inputId={`${id}-pan`}
             showInput={false}
-            ariaLabelForHandle={`${label} pan`}
+            ariaLabelForHandle={`${label} pan, ${panDirection}`}
           />
         </div>
-        <span className={styles.panLabel}>R</span>
+        <span className={styles.panLabel} aria-hidden="true">R</span>
       </div>
     </div>
   );

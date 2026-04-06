@@ -7,7 +7,7 @@ import { BellEarcon } from '../../sounds/BellEarcon';
  * Default preset — one cohesive sound design covering all metrics.
  *
  * CPU:    Sawtooth chord drone, brightness + LFO mapped to load
- * RAM:    Sawtooth seventh (B3), reverb-as-space metaphor
+ * RAM:    Sawtooth seventh (B3), reverb-as-space metaphor, brightness grading
  * Errors: FM bell earcon with reverb tail
  */
 export class DefaultPreset extends BasePreset {
