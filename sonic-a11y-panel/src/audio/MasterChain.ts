@@ -14,7 +14,7 @@ export class MasterChain {
   private readonly makeupGain: GainNode;
   private readonly limiter: DynamicsCompressorNode;
 
-  private static readonly MAX_GAIN = 0.8;
+  private static readonly MAX_GAIN = 0.5;
 
   constructor() {
     this.ctx = new AudioContext();
@@ -33,7 +33,7 @@ export class MasterChain {
 
     // Brick-wall limiter: catches transients before they clip
     this.limiter = this.ctx.createDynamicsCompressor();
-    this.limiter.threshold.value = -3;   // dBFS — start limiting 3 dB below clipping
+    this.limiter.threshold.value = -6;   // dBFS — start limiting 6 dB below clipping
     this.limiter.knee.value = 0;         // hard knee — no soft transition
     this.limiter.ratio.value = 20;       // near-infinite ratio — brickwall
     this.limiter.attack.value = 0.001;   // 1 ms — catch transients fast

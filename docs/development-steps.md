@@ -81,3 +81,41 @@
 - Prometheus scrape interval reduced from 15s to 5s for demo responsiveness.
 - Sample app JVM heap constrained (`-Xmx64m -Xms32m`) so RAM utilisation changes are audible during benchmarks.
 - MasterChain extended with `mute()`/`unmute()` methods (disconnect/reconnect limiter from speakers) for guaranteed silence when no data is available.
+
+## Session 7 — Volume Rework, Accessibility, Sound Design, and Dev Workflow
+
+### Audio Engine
+- Replaced MasterChain's passive gain ceiling (`GainNode` at 0.15) with a `DynamicsCompressorNode` brick-wall limiter (threshold −6 dBFS, ratio 20:1, 1 ms attack, 50 ms release). Added a separate makeup gain node at 0.5. Default master volume raised from 0.5 to 0.7.
+- Fixed `Distortion.ts` type error: `Float32Array<ArrayBuffer>` → `Float32Array` with cast at assignment.
+
+### RAM Sound Design (aligned with paper Table III)
+- Reverted RAM waveform from triangle back to sawtooth — paper §III.B states "spectral character similar to CPU drone." Triangle was too spectrally weak for the LPF brightness mapping to be effective.
+- Raised RAM LPF ceiling from 8 kHz to 15 kHz to match CPU drone, enabling full brightness range from idle to critical.
+- RAM volume: fade-in below 5%, then 0.85 (slightly below CPU's 1.0 so CPU remains the dominant stream).
+- Oscillator gain set to 0.25. No LFO or distortion — those are CPU-only urgency cues per the paper's severity grading design.
+
+### Error Notification
+- Changed error PromQL from `rate()[1m]` to raw cumulative counter `logback_events_total{level="error"}`.
+- Rewrote `ErrorTrigger` to track cumulative count — fires once per new error (when count increases), not repeatedly on a decaying rate.
+- Error display changed from rate (`0.20/s`) to integer count.
+
+### Screen Reader Accessibility
+- Iterative refinement of screen reader experience through NVDA testing:
+  - `MetricChannel` label changed from `<span>` to focusable `<button>` with visible metric text (e.g. "CPU: 42.5%"). Read on demand when user tabs to it, not auto-announced.
+  - Volume and pan sliders have static aria-labels ("CPU volume", "CPU pan, center") — no dynamic values that cause stale readouts.
+  - Mute button uses Grafana `IconButton` tooltip which doubles as aria-label.
+  - Pan slider announces direction (e.g. "30% left", "center").
+  - TransportBar: `role="toolbar"`, visual labels `aria-hidden`, combobox placeholders serve as accessible names.
+  - MasterVolume: static "Master volume" aria-label, `role="group"`.
+  - Removed `aria-live` regions and `role="status"` — caused unwanted announcements on each poll. All metric readouts are on-demand via tab navigation.
+  - Removed dead visually-hidden SR region.
+  - Decorative elements ("L"/"R" pan labels, dividers) marked `aria-hidden`.
+
+### Prometheus Integration
+- Prometheus polling now tied to Grafana dashboard refresh (`data.timeRange` dependency) instead of hardcoded 5s `setInterval`.
+- Added `DEMO_GAIN` multipliers for low-magnitude demo metrics (CPU × 50). Set to 1 for production.
+
+### Dev Workflow
+- Added `dev.sh` script at repo root — single command to tear down old containers, rebuild all images (sample app, Prometheus, Grafana plugin), and start webpack watch.
+- Script removes stale `algobench:latest` image to force fresh Docker builds.
+- Sample app benchmark limits increased: max repetitions 100 → 1000, default max value 100 → 10000, default array sizes expanded to include 50000 and 100000.

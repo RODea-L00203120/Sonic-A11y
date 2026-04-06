@@ -29,26 +29,25 @@ Two VS Code dev containers are provided (`.devcontainer/`):
 
 Open the repo in VS Code → **Dev Containers: Reopen in Container** → pick the one you need.
 
-### Plugin Hot Dev (two terminals)
+### Quick Start
+
+From the repo root (inside the plugin hot dev container):
 
 ```bash
-# Terminal 1 — watch and rebuild on save
-cd sonic-a11y-panel && npm run dev
-
-# Terminal 2 — run Grafana with plugin mounted
-cd sonic-a11y-panel && npm run server
+./dev.sh
 ```
 
-Open http://localhost:3000 (admin / admin). A provisioned sample dashboard with TestData is included — no external data source needed.
+This tears down any existing containers, rebuilds the sample app, starts Prometheus, starts Grafana with the plugin mounted, and runs webpack in watch mode. Open http://localhost:3000 (admin / admin).
 
 > **Port conflict?** Stop any existing Grafana first: `docker stop grafana`
 
-### Full Stack (sample app + monitoring)
+### Manual Steps
 
 ```bash
 docker network create a11y-net
-cd sample-app && docker compose up -d --build
-cd monitoring && docker compose up -d
+cd sample-app && docker compose up -d --build   # metric source
+cd monitoring && docker compose up -d prometheus # scraper
+cd sonic-a11y-panel && docker compose up -d --build && npm run dev
 ```
 
 ### Audio Architecture
@@ -56,14 +55,17 @@ cd monitoring && docker compose up -d
 The sonification engine lives in `sonic-a11y-panel/src/audio/`:
 
 ```
-SoundPreset.ts          — interface all sound presets implement
-MasterChain.ts          — shared output chain: volume → safety limiter → speakers
-DataScaler.ts           — extracts Grafana metric data, normalizes to 0–1
-presets/
-  SynthA11y.ts          — sawtooth chord with metric-driven filter, LFO, distortion
+MasterChain.ts              — shared output: volume → makeup gain → brick-wall limiter → speakers
+ChannelStrip.ts             — per-metric gain + stereo pan
+DataScaler.ts               — extracts Grafana metric data
+SoundPreset.ts / BasePreset — preset interface and abstract base class
+sounds/                     — reusable sound sources (CpuDrone, RamDrone, BellEarcon)
+effects/                    — DSP modules (Glide, LFO, Distortion, DefaultEQ, Reverb)
+scalers/                    — per-metric scaling (CpuScaler, RamScaler, ErrorTrigger)
+presets/<name>/             — preset composition (DefaultPreset composes sound sources)
 ```
 
-New sounds are added by creating a class in `presets/` implementing the `SoundPreset` interface. Goal: 3 metrics x 3 presets.
+New sounds are added by implementing `SoundSource` in `sounds/`. New presets compose sources by extending `BasePreset` in `presets/<name>/`.
 
 ### Cloud Deployment
 

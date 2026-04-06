@@ -6,7 +6,7 @@ import { Reverb } from '../effects/Reverb';
 const BASE_FREQ = 246.94;      // B3 — diatonic seventh, mildly dissonant against C major triad
 const HIGH_FREQ = 493.88;      // B4 — subtle pitch rise at critical utilisation
 const LPF_MIN_FREQ = 300;
-const LPF_MAX_FREQ = 8000;
+const LPF_MAX_FREQ = 15000;    // Match CPU drone ceiling for full brightness range
 const REVERB_MAX_MIX = 0.7;    // Spacious at idle
 const REVERB_MIN_MIX = 0.05;   // Near-dry at critical
 const GLIDE_DURATION = 2.0;
@@ -18,8 +18,13 @@ function metricToFilterCutoff(value: number): number {
 /**
  * RAM sound source — sawtooth seventh with reverb-as-space metaphor.
  *
- * Chain: oscillator → EQ → LPF → reverb → destination
+ * Sawtooth waveform matches CPU drone's spectral character for tonal coherence
+ * (paper §III.B: "spectral character similar to CPU drone"). Separation comes
+ * from pitch (B3 diatonic seventh), reverb (space metaphor), and brightness.
+ * No LFO or distortion — those are CPU-only urgency cues.
  *
+ * Chain: oscillator → EQ → LPF → reverb → destination
+ * Volume: floor at low usage, scales to full at critical.
  * Reverb: wet/spacious at low utilisation (headroom), dry at high (constricted).
  * Pitch: B3 rising toward B4 with utilisation.
  * Brightness: LPF cutoff tracks RAM% (warm at idle, bright at critical).
@@ -48,7 +53,7 @@ export class RamDrone implements SoundSource {
     this.reverb = reverb;
 
     const oscGain = ctx.createGain();
-    oscGain.gain.value = 0.3;
+    oscGain.gain.value = 0.25;
 
     const osc = ctx.createOscillator();
     osc.type = 'sawtooth';
@@ -77,7 +82,8 @@ export class RamDrone implements SoundSource {
       return;
     }
 
-    // 0% = off, 0-5% fades in, 5%+ = full
+    // Volume: matches CPU pattern — fade in below 5%, full above.
+    // Slightly below CPU (0.85) so CPU remains the dominant stream.
     if (this.outputGain) {
       let vol: number;
       if (value <= 0) {
@@ -85,7 +91,7 @@ export class RamDrone implements SoundSource {
       } else if (value < RamDrone.FADE_IN_THRESHOLD) {
         vol = value / RamDrone.FADE_IN_THRESHOLD;
       } else {
-        vol = 1;
+        vol = 0.85;
       }
       this.outputGain.gain.setTargetAtTime(vol, this.ctx.currentTime, 0.1);
     }
