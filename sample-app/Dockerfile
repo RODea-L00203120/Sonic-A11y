@@ -34,4 +34,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
   CMD curl -f http://localhost:8080/api/health || exit 1
 
 # Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Constrain heap so RAM utilisation is visible during benchmarks
+ENTRYPOINT ["java", "-Xmx64m", "-Xms32m", "-jar", "app.jar"]

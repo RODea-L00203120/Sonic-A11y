@@ -1,6 +1,8 @@
 package ie.ronanodea.algobench.controller;
 
 import ie.ronanodea.algobench.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,11 +15,23 @@ import java.util.*;
 @CrossOrigin(origins = "*")
 public class BenchmarkController {
 
+    private static final Logger log = LoggerFactory.getLogger(BenchmarkController.class);
+
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> health() {
         Map<String, String> response = new HashMap<>();
         response.put("status", "UP");
         response.put("service", "Algorithm Benchmark API");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/error")
+    public ResponseEntity<Map<String, String>> triggerError(
+            @RequestParam(defaultValue = "Simulated application error") String message) {
+        log.error("APPLICATION ERROR: {}", message);
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "error_logged");
+        response.put("message", message);
         return ResponseEntity.ok(response);
     }
 

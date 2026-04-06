@@ -3,3 +3,10 @@ services:
     extends:
       file: .config/docker-compose-base.yaml
       service: grafana
+    networks:
+      - default
+      - a11y-net
+
+networks:
+  a11y-net:
+    external: true

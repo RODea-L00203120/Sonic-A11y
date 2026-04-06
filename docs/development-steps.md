@@ -57,3 +57,27 @@
 - `SoundPreset` interface updated to accept `MetricValues` object and `ChannelDestinations` for multi-metric routing.
 - Major OOP refactor: introduced `SoundSource` interface and `BasePreset` abstract class. Presets now compose reusable sounds from `audio/sounds/` rather than containing all logic inline. `DefaultPreset` is ~20 lines.
 - File structure: `sounds/` (reusable sound sources), `effects/` (DSP modules), `scalers/` (per-metric data scaling), `presets/<name>/` (preset composition).
+
+## Session 6 — Rename, Research Alignment, and Prometheus Integration
+
+- Renamed project artefacts: repo to `Sonic-A11y`, plugin folder to `sonic-a11y-panel`, plugin ID to `sonic-a11y-panel`, display name to "Sonic-A11y", author to "Ronan O'Dea". Updated all references across CLAUDE.md, README, docs, devcontainer, CI, docker-compose, and provisioned dashboard.
+- Aligned CPU severity zones with the paper's Table II:
+  - Distortion threshold lowered from 81% to 60%, with two-stage curve: light drive (0–3) from 60–85%, heavy drive (3–8) from 85–100%.
+  - LFO minimum rate lowered from 0.3 Hz to 0.05 Hz (near-silent at idle).
+  - LFO depth increased to 0.2 baseline, ramping to 0.5 above 90% CPU for saliency.
+- Implemented RAM sonification per paper's Table III:
+  - `RamScaler.ts` — Stevens' Power Law (exponent 2.0), matching CPU scaler.
+  - `RamDrone.ts` — sawtooth oscillator at B3 (diatonic seventh against C major triad), with reverb-as-space metaphor (wet/spacious at low utilisation → dry at high), LPF brightness tracking, and subtle pitch rise (B3→B4) with utilisation.
+  - Wired into `DefaultPreset` replacing the null RAM slot.
+- Multi-metric data routing: `extractLatestValue()` updated to accept a series index. Panel now reads series 0=CPU, 1=RAM, 2=Errors from Grafana queries. Graceful fallback to 0 when a series is absent.
+- Provisioned dashboard updated with three TestData random walk queries (CPU 0–100, RAM 0–100, Errors 0–5).
+- Added in-panel datasource selector dropdown ("Source") next to Preset dropdown. Defaults to "Test Data" (uses panel queries). Lists available Prometheus datasources via `getDataSourceSrv()`. When Prometheus selected, polls it every 5s with preset PromQL queries directly via `getBackendSrv()`.
+- Prometheus datasource provisioned in plugin (`sonic-a11y-panel/provisioning/datasources/datasources.yml`). Plugin Grafana container joined to `a11y-net` for Prometheus access.
+- PromQL queries: `process_cpu_usage * on() group_left system_cpu_count` (normalised to single-core), `sum(jvm_memory_used_bytes{area="heap"}) / sum(jvm_memory_max_bytes{area="heap"})` (heap %). Values converted from 0–1 ratio to 0–100 percentage in JS.
+- Added `/api/error` endpoint to sample app (`BenchmarkController.java`) that logs via SLF4J, incrementing the `logback_events_total{level="error"}` Prometheus counter.
+- Glide duration set to 2 seconds for all metric parameter transitions.
+- Output gain fade-in added to both drones: 0% = silent, 0–5% fades in linearly, 5%+ = full volume. Ensures no audible output when metrics report zero.
+- Status bar shows 2 decimal places for values below 1% (e.g. `CPU: 0.02%`).
+- Prometheus scrape interval reduced from 15s to 5s for demo responsiveness.
+- Sample app JVM heap constrained (`-Xmx64m -Xms32m`) so RAM utilisation changes are audible during benchmarks.
+- MasterChain extended with `mute()`/`unmute()` methods (disconnect/reconnect limiter from speakers) for guaranteed silence when no data is available.

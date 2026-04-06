@@ -46,7 +46,32 @@
             "uid": "trlxrdZVk"
           },
           "refId": "A",
-          "scenarioId": "random_walk"
+          "alias": "CPU",
+          "scenarioId": "random_walk",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "trlxrdZVk"
+          },
+          "refId": "B",
+          "alias": "RAM",
+          "scenarioId": "random_walk",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "trlxrdZVk"
+          },
+          "refId": "C",
+          "alias": "Errors",
+          "scenarioId": "random_walk",
+          "min": 0,
+          "max": 5
         }
       ],
       "title": "Sonic-A11y",
@@ -65,7 +90,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Provisioned A11y Sonification dashboard",
+  "title": "Sonic-A11y",
   "uid": "a538aeff-5a8a-42a5-901c-938d896fdd6f",
   "version": 1,
   "weekStart": ""

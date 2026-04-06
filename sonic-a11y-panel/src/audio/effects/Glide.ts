@@ -23,6 +23,12 @@ export class Glide {
     // so the new glide starts from where the param actually is right now.
     param.cancelScheduledValues(now);
     param.setValueAtTime(param.value, now);
-    param.setTargetAtTime(target, now, this.timeConstant);
+
+    if (target === 0) {
+      // linearRamp reaches true zero; setTargetAtTime only approaches it asymptotically
+      param.linearRampToValueAtTime(0, now + this.timeConstant * 3);
+    } else {
+      param.setTargetAtTime(target, now, this.timeConstant);
+    }
   }
 }

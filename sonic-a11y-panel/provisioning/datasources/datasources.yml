@@ -2,6 +2,13 @@ apiVersion: 1
 
 datasources:
   - name: TestData DB
-    type: testdata
+    type: grafana-testdata-datasource
     uid: trlxrdZVk
+    isDefault: false
+
+  - name: Prometheus
+    type: prometheus
+    uid: sonic-a11y-prometheus
+    url: http://prometheus:9090
     isDefault: true
+    access: proxy
