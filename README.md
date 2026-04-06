@@ -69,8 +69,9 @@ New sounds are added by implementing `SoundSource` in `sounds/`. New presets com
 
 ## Demonstration
 
-- Images/Link to recording
-- Link to Paper
+Video demonstrations of the plugin in operation can be found in the [demo/](demo/) folder.
+
+- Headphones recommended for playback — stereo panning and reverb depth are not perceptible on laptop speakers.
 
 ### Sample Application for Demonstration Purposes
 
