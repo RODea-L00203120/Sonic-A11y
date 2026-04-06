@@ -67,14 +67,11 @@ presets/<name>/             — preset composition (DefaultPreset composes sound
 
 New sounds are added by implementing `SoundSource` in `sounds/`. New presets compose sources by extending `BasePreset` in `presets/<name>/`.
 
-### Cloud Deployment
-
-- Include links here
-
 ## Demonstration
 
-- Images/Link to recording
-- Link to Paper
+Video demonstrations of the plugin in operation can be found in the [demo/](demo/) folder.
+
+- Headphones recommended for playback — stereo panning and reverb depth are not perceptible on laptop speakers.
 
 ### Sample Application for Demonstration Purposes
 
@@ -86,11 +83,22 @@ The [AlgoBench](sample-app/) application is included as a sample workload to gen
 
 ## To-Do
 
+- Additional presets drawing on ecological acoustics (e.g. nature-based soundscapes)
+- User-configurable sonification parameters via a dedicated settings interface to support mapping congruence
+- Platform-agnostic refactoring to decouple from JVM-specific metrics via configurable query templates
+- Controlled user study evaluating anomaly detection performance and cognitive load across sonification, visual-only, and combined conditions with both sighted and BLV participants
+- Migration of complex presets to AudioWorklet if polyphonic counts or real-time convolution exceed main-thread budget
+- User-configurable severity grading thresholds (currently fixed in source)
+- Streaming data integration to reduce latency between metric change and audible response
+- CI/CD validation, end-to-end test coverage, and plugin signing for Grafana community plugin catalogue submission
+
 ## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Conclusion
+
+Sonic-A11y demonstrates that continuous, literature-informed sonification of DevOps infrastructure metrics is feasible within the Grafana ecosystem using the Web Audio API. The current prototype sonifies three metrics — CPU utilisation, RAM utilisation, and error count — through a modular audio engine with perceptually graded severity mappings informed by psychoacoustic research, embodied cognition theory, and auditory distraction studies. The plugin supports screen reader navigation, per-metric channel controls (volume, pan, mute), and a brick-wall limiter for safe listening levels. While the design is grounded in the literature, empirical validation with both sighted and blind or low-vision users remains as planned future work.
 
 
 
