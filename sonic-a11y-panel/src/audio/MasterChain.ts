@@ -1,5 +1,5 @@
 /**
- * Shared output chain: volume control → safety limiter → destination.
+ * Shared output chain: volume control → makeup gain → safety limiter → destination.
  *
  * Every preset connects into `input` — the rest of the chain
  * is transparent to the preset.
@@ -11,9 +11,10 @@ export class MasterChain {
   readonly input: GainNode;
 
   private readonly volumeGain: GainNode;
-  private readonly limiter: GainNode;
+  private readonly makeupGain: GainNode;
+  private readonly limiter: DynamicsCompressorNode;
 
-  private static readonly MAX_GAIN = 0.15;
+  private static readonly MAX_GAIN = 0.8;
 
   constructor() {
     this.ctx = new AudioContext();
@@ -22,17 +23,26 @@ export class MasterChain {
     this.input = this.ctx.createGain();
     this.input.gain.value = 1.0;
 
-    // User-controlled volume (0–1)
+    // User-controlled volume (0–1 mapped to 0–MAX_GAIN)
     this.volumeGain = this.ctx.createGain();
-    this.volumeGain.gain.value = 0.5;
+    this.volumeGain.gain.value = 0.7;
 
-    // Hard ceiling so nothing blows the speakers
-    this.limiter = this.ctx.createGain();
-    this.limiter.gain.value = MasterChain.MAX_GAIN;
+    // Makeup gain applies MAX_GAIN ceiling
+    this.makeupGain = this.ctx.createGain();
+    this.makeupGain.gain.value = MasterChain.MAX_GAIN;
 
-    // Chain: input → volume → limiter → speakers
+    // Brick-wall limiter: catches transients before they clip
+    this.limiter = this.ctx.createDynamicsCompressor();
+    this.limiter.threshold.value = -3;   // dBFS — start limiting 3 dB below clipping
+    this.limiter.knee.value = 0;         // hard knee — no soft transition
+    this.limiter.ratio.value = 20;       // near-infinite ratio — brickwall
+    this.limiter.attack.value = 0.001;   // 1 ms — catch transients fast
+    this.limiter.release.value = 0.05;   // 50 ms — recover quickly
+
+    // Chain: input → volume → makeup → limiter → speakers
     this.input.connect(this.volumeGain);
-    this.volumeGain.connect(this.limiter);
+    this.volumeGain.connect(this.makeupGain);
+    this.makeupGain.connect(this.limiter);
     this.limiter.connect(this.ctx.destination);
   }
 
@@ -54,6 +64,7 @@ export class MasterChain {
     // Disconnect immediately so audio stops before the async close() completes
     this.input.disconnect();
     this.volumeGain.disconnect();
+    this.makeupGain.disconnect();
     this.limiter.disconnect();
     this.ctx.close();
   }
