@@ -22,6 +22,9 @@ const PRESET_OPTIONS: Array<SelectableValue<string>> = [
 ];
 
 const PANEL_QUERIES_VALUE = '__panel__';
+const DEMO_VALUE = '__demo__';
+const DEMO_STEPS = [10, 33, 50, 75, 90, 100];
+const DEMO_STEP_MS = 5000;
 
 const PROMETHEUS_QUERIES = {
   cpu: 'process_cpu_usage * on() group_left system_cpu_count',
@@ -89,6 +92,7 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
   const dataSourceOptions = useMemo<Array<SelectableValue<string>>>(() => {
     const options: Array<SelectableValue<string>> = [
       { label: 'Test Data', value: PANEL_QUERIES_VALUE },
+      { label: 'Demo', value: DEMO_VALUE },
     ];
     try {
       const datasources = getDataSourceSrv().getList({ metrics: true });
@@ -103,10 +107,28 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
     return options;
   }, []);
 
+  // Demo stepper — cycles CPU/RAM through fixed percentages for video walkthroughs.
+  useEffect(() => {
+    if (selectedDataSource !== DEMO_VALUE) {
+      return;
+    }
+    let i = 0;
+    const tick = () => {
+      const v = DEMO_STEPS[i % DEMO_STEPS.length];
+      setPrometheusData({ cpu: v, ram: v, errors: 0 });
+      i++;
+    };
+    tick();
+    const id = setInterval(tick, DEMO_STEP_MS);
+    return () => clearInterval(id);
+  }, [selectedDataSource]);
+
   // Poll Prometheus on each dashboard refresh (driven by data.timeRange)
   useEffect(() => {
-    if (selectedDataSource === PANEL_QUERIES_VALUE) {
-      setPrometheusData({ cpu: null, ram: null, errors: null });
+    if (selectedDataSource === PANEL_QUERIES_VALUE || selectedDataSource === DEMO_VALUE) {
+      if (selectedDataSource === PANEL_QUERIES_VALUE) {
+        setPrometheusData({ cpu: null, ram: null, errors: null });
+      }
       return;
     }
 
@@ -169,10 +191,10 @@ export const SonificationPanel: React.FC<Props> = ({ data, width, height }) => {
   const [errorsPan, setErrorsPan] = useState(0);
 
   // --- Data extraction ---
-  const usingPrometheus = selectedDataSource !== PANEL_QUERIES_VALUE;
-  const rawCpu = usingPrometheus ? prometheusData.cpu : extractLatestValue(data, 0);
-  const rawRam = usingPrometheus ? prometheusData.ram : extractLatestValue(data, 1);
-  const rawErrors = usingPrometheus ? prometheusData.errors : extractLatestValue(data, 2);
+  const usingInjected = selectedDataSource !== PANEL_QUERIES_VALUE;
+  const rawCpu = usingInjected ? prometheusData.cpu : extractLatestValue(data, 0);
+  const rawRam = usingInjected ? prometheusData.ram : extractLatestValue(data, 1);
+  const rawErrors = usingInjected ? prometheusData.errors : extractLatestValue(data, 2);
 
   const cpu = rawCpu !== null ? scaleCpu(rawCpu) : 0;
   const ram = rawRam !== null ? scaleRam(rawRam) : 0;
