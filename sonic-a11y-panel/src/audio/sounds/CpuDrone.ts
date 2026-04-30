@@ -90,13 +90,17 @@ export class CpuDrone implements SoundSource {
 
   // 5% raw CPU after Stevens' power law = (5/100)^2 = 0.0025
   private static readonly FADE_IN_THRESHOLD = 0.0025;
+  // Makeup attenuation applied at peak distortion drive to compensate for
+  // tanh saturation's loudness boost — keeps perceived level comparable
+  // while preserving the added brightness/harmonics.
+  private static readonly DISTORTION_MAKEUP_MIN = 0.5;
 
   update(value: number): void {
     if (!this.ctx) {
       return;
     }
 
-    // 0% = off, 0-5% fades in, 5%+ = full
+    // 0% = off, 0-5% fades in, 5%+ = full, with makeup attenuation under heavy distortion
     if (this.outputGain) {
       let vol: number;
       if (value <= 0) {
@@ -105,6 +109,10 @@ export class CpuDrone implements SoundSource {
         vol = value / CpuDrone.FADE_IN_THRESHOLD;
       } else {
         vol = 1;
+      }
+      if (value >= DISTORTION_CRITICAL) {
+        const t = (value - DISTORTION_CRITICAL) / (1 - DISTORTION_CRITICAL);
+        vol *= 1 - t * (1 - CpuDrone.DISTORTION_MAKEUP_MIN);
       }
       this.outputGain.gain.setTargetAtTime(vol, this.ctx.currentTime, 0.1);
     }
